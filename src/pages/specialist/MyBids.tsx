@@ -4,14 +4,29 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { ArrowLeft, MapPin, Calendar, DollarSign } from 'lucide-react';
-import type { Bid } from '@/types/database';
+import { ArrowLeft, MapPin, Calendar, DollarSign, User } from 'lucide-react';
+import type { Bid, JobStatus } from '@/types/database';
+
+interface BidWithClient extends Omit<Bid, 'job'> {
+  job: {
+    id: string;
+    title: string;
+    location: string | null;
+    status: string;
+    client_id: string;
+    category: { name: string } | null;
+  };
+  client?: {
+    user_id: string;
+    full_name: string;
+  };
+}
 
 export default function MyBids() {
   const { user } = useAuth();
-  const [bids, setBids] = useState<Bid[]>([]);
+  const [bids, setBids] = useState<BidWithClient[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -23,12 +38,27 @@ export default function MyBids() {
   const fetchBids = async () => {
     const { data } = await supabase
       .from('bids')
-      .select('*, job:jobs(id, title, location, status, category:categories(name))')
+      .select('*, job:jobs(id, title, location, status, client_id, category:categories(name))')
       .eq('specialist_id', user!.id)
       .order('created_at', { ascending: false });
 
-    if (data) {
-      setBids(data as unknown as Bid[]);
+    if (data && data.length > 0) {
+      // Get unique client IDs
+      const clientIds = [...new Set(data.map((bid: any) => bid.job?.client_id).filter(Boolean))];
+      
+      // Fetch client profiles
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, full_name')
+        .in('user_id', clientIds);
+
+      // Merge client info into bids
+      const bidsWithClients = data.map((bid: any) => ({
+        ...bid,
+        client: profiles?.find(p => p.user_id === bid.job?.client_id)
+      }));
+
+      setBids(bidsWithClients as BidWithClient[]);
     }
     setIsLoading(false);
   };
@@ -77,15 +107,24 @@ export default function MyBids() {
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-medium truncate">{(bid.job as any)?.title}</h3>
+                          <h3 className="font-medium truncate">{bid.job?.title}</h3>
                           <StatusBadge status={bid.status} />
                         </div>
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                          <span>{(bid.job as any)?.category?.name || 'Sin categoría'}</span>
-                          {(bid.job as any)?.location && (
+                          {bid.client && (
+                            <Link 
+                              to={`/client/profile/${bid.client.user_id}`}
+                              className="flex items-center gap-1 hover:text-primary transition-colors"
+                            >
+                              <User className="h-3 w-3" />
+                              {bid.client.full_name}
+                            </Link>
+                          )}
+                          <span>{bid.job?.category?.name || 'Sin categoría'}</span>
+                          {bid.job?.location && (
                             <span className="flex items-center gap-1">
                               <MapPin className="h-3 w-3" />
-                              {(bid.job as any).location}
+                              {bid.job.location}
                             </span>
                           )}
                           <span className="flex items-center gap-1">
@@ -104,7 +143,7 @@ export default function MyBids() {
                             <p className="text-xs text-muted-foreground">{bid.eta}</p>
                           )}
                         </div>
-                        <StatusBadge status={(bid.job as any)?.status} />
+                        <StatusBadge status={bid.job?.status as JobStatus} />
                       </div>
                     </div>
                     {bid.message && (
