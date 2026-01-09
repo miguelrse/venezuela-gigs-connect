@@ -44,14 +44,32 @@ export default function JobDetail() {
   };
 
   const fetchBids = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('bids')
-      .select('*, specialist:profiles!bids_specialist_id_fkey(full_name, location)')
+      .select('*')
       .eq('job_id', id)
       .order('created_at', { ascending: false });
 
+    if (error) {
+      console.error('Error fetching bids:', error);
+    }
+
     if (data) {
-      setBids(data as unknown as Bid[]);
+      // Fetch specialist profiles separately
+      const specialistIds = [...new Set(data.map(b => b.specialist_id))];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, location')
+        .in('user_id', specialistIds);
+
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+      
+      const bidsWithProfiles = data.map(bid => ({
+        ...bid,
+        specialist: profileMap.get(bid.specialist_id) || { full_name: 'Especialista', location: null }
+      }));
+
+      setBids(bidsWithProfiles as unknown as Bid[]);
     }
   };
 
