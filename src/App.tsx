@@ -7,7 +7,13 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ClientDashboard from "./pages/client/Dashboard";
+import CreateJob from "./pages/client/CreateJob";
+import JobDetail from "./pages/client/JobDetail";
+import JobsList from "./pages/client/JobsList";
 import SpecialistDashboard from "./pages/specialist/Dashboard";
+import BrowseJobs from "./pages/specialist/BrowseJobs";
+import SpecialistJobDetail from "./pages/specialist/JobDetail";
+import MyBids from "./pages/specialist/MyBids";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,8 +41,19 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={<Index />} />
       <Route path="/auth" element={<Auth />} />
+      
+      {/* Client Routes */}
       <Route path="/client" element={<ProtectedRoute allowedRoles={['client', 'admin']}><ClientDashboard /></ProtectedRoute>} />
+      <Route path="/client/jobs" element={<ProtectedRoute allowedRoles={['client', 'admin']}><JobsList /></ProtectedRoute>} />
+      <Route path="/client/jobs/new" element={<ProtectedRoute allowedRoles={['client', 'admin']}><CreateJob /></ProtectedRoute>} />
+      <Route path="/client/jobs/:id" element={<ProtectedRoute allowedRoles={['client', 'admin']}><JobDetail /></ProtectedRoute>} />
+      
+      {/* Specialist Routes */}
       <Route path="/specialist" element={<ProtectedRoute allowedRoles={['specialist', 'admin']}><SpecialistDashboard /></ProtectedRoute>} />
+      <Route path="/specialist/browse" element={<ProtectedRoute allowedRoles={['specialist', 'admin']}><BrowseJobs /></ProtectedRoute>} />
+      <Route path="/specialist/jobs/:id" element={<ProtectedRoute allowedRoles={['specialist', 'admin']}><SpecialistJobDetail /></ProtectedRoute>} />
+      <Route path="/specialist/bids" element={<ProtectedRoute allowedRoles={['specialist', 'admin']}><MyBids /></ProtectedRoute>} />
+      
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
