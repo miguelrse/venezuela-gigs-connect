@@ -118,6 +118,37 @@ export interface UserRole {
   created_at: string;
 }
 
+export interface PortfolioItem {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string | null;
+  image_url: string | null;
+  category_id: string | null;
+  created_at: string;
+  updated_at: string;
+  category?: Category;
+}
+
+export interface ReviewerProfile {
+  user_id: string;
+  full_name: string;
+  avatar_url: string | null;
+}
+
+export interface Review {
+  id: string;
+  contract_id: string;
+  reviewer_id: string;
+  reviewee_id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+  reviewer?: ReviewerProfile;
+  reviewee?: Profile;
+  contract?: Contract;
+}
+
 // Form types
 export interface JobFormData {
   title: string;
@@ -139,4 +170,11 @@ export interface ProfileFormData {
   phone: string;
   location: string;
   bio: string;
+}
+
+export interface PortfolioFormData {
+  title: string;
+  description: string;
+  image_url: string;
+  category_id: string;
 }
