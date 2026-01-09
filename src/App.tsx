@@ -38,11 +38,30 @@ function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode;
   return <>{children}</>;
 }
 
+function ProfileRedirect() {
+  const { user, role, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center">Cargando...</div>;
+  }
+  
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+  
+  // Redirect to the appropriate profile based on role
+  if (role === 'specialist') {
+    return <Navigate to={`/specialist/profile/${user.id}`} replace />;
+  }
+  return <Navigate to={`/client/profile/${user.id}`} replace />;
+}
+
 function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Index />} />
       <Route path="/auth" element={<Auth />} />
+      <Route path="/profile" element={<ProfileRedirect />} />
       
       {/* Client Routes */}
       <Route path="/client" element={<ProtectedRoute allowedRoles={['client', 'admin']}><ClientDashboard /></ProtectedRoute>} />
