@@ -36,7 +36,7 @@ export default function SpecialistJobDetail() {
   const fetchJob = async () => {
     const { data, error } = await supabase
       .from('jobs')
-      .select('*, category:categories(name, icon)')
+      .select('*')
       .eq('id', id)
       .eq('status', 'open')
       .maybeSingle();
@@ -47,7 +47,19 @@ export default function SpecialistJobDetail() {
       return;
     }
 
-    setJob(data as unknown as Job);
+    // Fetch client profile and category separately
+    const [categoryRes, clientRes] = await Promise.all([
+      data.category_id 
+        ? supabase.from('categories').select('name, icon').eq('id', data.category_id).maybeSingle()
+        : Promise.resolve({ data: null }),
+      supabase.from('profiles').select('user_id, full_name, location').eq('user_id', data.client_id).maybeSingle()
+    ]);
+
+    setJob({
+      ...data,
+      category: categoryRes.data || undefined,
+      client: clientRes.data || undefined
+    } as unknown as Job);
     setIsLoading(false);
   };
 
@@ -142,7 +154,12 @@ export default function SpecialistJobDetail() {
             <CardTitle className="text-2xl">{job.title}</CardTitle>
             <CardDescription className="flex items-center gap-2 mt-2">
               <User className="h-4 w-4" />
-              <span>{(job.client as any)?.full_name || 'Cliente'}</span>
+              <Link 
+                to={`/client/profile/${job.client_id}`}
+                className="text-primary hover:underline"
+              >
+                {(job.client as any)?.full_name || 'Cliente'}
+              </Link>
               <span>•</span>
               <Calendar className="h-4 w-4" />
               <span>{formatDate(job.created_at)}</span>

@@ -224,9 +224,12 @@ export default function JobDetail() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                           <User className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">
+                          <Link 
+                            to={`/specialist/profile/${bid.specialist_id}`}
+                            className="font-medium text-primary hover:underline"
+                          >
                             {(bid.specialist as any)?.full_name || 'Especialista'}
-                          </span>
+                          </Link>
                           <StatusBadge status={bid.status} />
                         </div>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
