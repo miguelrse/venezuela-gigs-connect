@@ -36,10 +36,10 @@ export default function SpecialistJobDetail() {
   const fetchJob = async () => {
     const { data, error } = await supabase
       .from('jobs')
-      .select('*, category:categories(name, icon), client:profiles!jobs_client_id_fkey(full_name, location)')
+      .select('*, category:categories(name, icon)')
       .eq('id', id)
       .eq('status', 'open')
-      .single();
+      .maybeSingle();
 
     if (error || !data) {
       toast.error('Trabajo no encontrado o ya no está disponible');
