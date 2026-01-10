@@ -79,9 +79,12 @@ export function ProfileEditDialog({
     setSelectedCategories(selectedCategoryIds);
   }, [selectedCategoryIds]);
 
+  // Only reset custom categories when dialog opens (not on every profile change)
   useEffect(() => {
-    setCustomCategories(profile.custom_categories || []);
-  }, [profile.custom_categories]);
+    if (open) {
+      setCustomCategories(profile.custom_categories || []);
+    }
+  }, [open]);
 
   useEffect(() => {
     form.reset({
