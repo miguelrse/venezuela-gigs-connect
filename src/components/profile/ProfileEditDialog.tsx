@@ -11,9 +11,10 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Profile, Category } from "@/types/database";
-import { Loader2, X, Plus } from "lucide-react";
+import { Loader2, X, Plus, Camera, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { useRef } from "react";
 
 const profileSchema = z.object({
   full_name: z.string().min(2, "El nombre debe tener al menos 2 caracteres").max(100),
@@ -43,10 +44,12 @@ export function ProfileEditDialog({
   onSuccess,
 }: ProfileEditDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>(selectedCategoryIds);
   const [customCategories, setCustomCategories] = useState<string[]>(profile.custom_categories || []);
   const [newCustomCategory, setNewCustomCategory] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -116,6 +119,53 @@ export function ProfileEditDialog({
     if (e.key === "Enter") {
       e.preventDefault();
       addCustomCategory();
+    }
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Por favor selecciona una imagen");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("La imagen debe ser menor a 5MB");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${profile.user_id}/${Date.now()}.${fileExt}`;
+
+      // Upload to storage
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(fileName);
+
+      form.setValue("avatar_url", urlData.publicUrl);
+      toast.success("Foto subida correctamente");
+    } catch (error) {
+      console.error("Error uploading avatar:", error);
+      toast.error("Error al subir la foto");
+    } finally {
+      setIsUploading(false);
+      // Reset input so same file can be selected again
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -193,32 +243,65 @@ export function ProfileEditDialog({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Avatar Preview */}
-            <div className="flex items-center gap-4">
-              <Avatar className="h-20 w-20 border-2 border-border">
-                <AvatarImage src={watchedAvatarUrl || undefined} />
-                <AvatarFallback className="bg-primary text-primary-foreground text-xl">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <FormField
-                  control={form.control}
-                  name="avatar_url"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>URL de avatar</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="https://ejemplo.com/avatar.jpg"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+            {/* Avatar Upload */}
+            <div className="space-y-3">
+              <FormLabel>Foto de perfil</FormLabel>
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <Avatar className="h-24 w-24 border-2 border-border">
+                    <AvatarImage src={watchedAvatarUrl || undefined} />
+                    <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
+                      {initials}
+                    </AvatarFallback>
+                  </Avatar>
+                  {isUploading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-full">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    </div>
                   )}
-                />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileSelect}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                  >
+                    <Camera className="h-4 w-4 mr-2" />
+                    Subir foto
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    JPG, PNG. Máx 5MB
+                  </p>
+                </div>
               </div>
+              
+              {/* Optional URL input */}
+              <FormField
+                control={form.control}
+                name="avatar_url"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs text-muted-foreground">O ingresa una URL</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="https://ejemplo.com/avatar.jpg"
+                        {...field}
+                        className="text-sm"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
             <FormField
@@ -366,7 +449,7 @@ export function ProfileEditDialog({
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting || isUploading}>
                 {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 Guardar cambios
               </Button>
