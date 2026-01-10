@@ -7,8 +7,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { toast } from 'sonner';
-import { ArrowLeft, MapPin, DollarSign, Calendar, User, Loader2, Check } from 'lucide-react';
-import type { Job, Bid } from '@/types/database';
+import { ArrowLeft, MapPin, DollarSign, Calendar, User, Loader2, Check, FileText, Clock, CheckCircle } from 'lucide-react';
+import type { Job, Bid, ContractStatus } from '@/types/database';
+
+interface ContractInfo {
+  id: string;
+  status: ContractStatus;
+  specialist_id: string;
+  specialist?: { full_name: string };
+  bid?: { amount: number; eta: string | null };
+}
 
 export default function JobDetail() {
   const { id } = useParams<{ id: string }>();
@@ -16,6 +24,7 @@ export default function JobDetail() {
   const { user } = useAuth();
   const [job, setJob] = useState<Job | null>(null);
   const [bids, setBids] = useState<Bid[]>([]);
+  const [contract, setContract] = useState<ContractInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [acceptingBidId, setAcceptingBidId] = useState<string | null>(null);
 
@@ -23,6 +32,7 @@ export default function JobDetail() {
     if (id) {
       fetchJob();
       fetchBids();
+      fetchContract();
     }
   }, [id]);
 
@@ -70,6 +80,28 @@ export default function JobDetail() {
       }));
 
       setBids(bidsWithProfiles as unknown as Bid[]);
+    }
+  };
+
+  const fetchContract = async () => {
+    const { data } = await supabase
+      .from('contracts')
+      .select('id, status, specialist_id, bid:bids!accepted_bid_id(amount, eta)')
+      .eq('job_id', id)
+      .maybeSingle();
+
+    if (data) {
+      // Fetch specialist profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('user_id', data.specialist_id)
+        .single();
+
+      setContract({
+        ...data,
+        specialist: profile || { full_name: 'Especialista' }
+      } as ContractInfo);
     }
   };
 
@@ -125,6 +157,7 @@ export default function JobDetail() {
     setAcceptingBidId(null);
     fetchJob();
     fetchBids();
+    fetchContract();
   };
 
   if (isLoading) {
@@ -148,6 +181,53 @@ export default function JobDetail() {
   };
 
   const canAcceptBids = job.status === 'open';
+  const hasActiveContract = contract && ['active', 'in_progress', 'completed_pending_client', 'completed'].includes(contract.status);
+
+  // Get contract status display info
+  const getContractStatusInfo = (status: ContractStatus) => {
+    switch (status) {
+      case 'active':
+        return { 
+          icon: FileText, 
+          color: 'text-blue-500', 
+          bgColor: 'bg-blue-500/10', 
+          borderColor: 'border-blue-500/50',
+          message: 'El especialista ha sido asignado y puede comenzar a trabajar'
+        };
+      case 'in_progress':
+        return { 
+          icon: Clock, 
+          color: 'text-amber-500', 
+          bgColor: 'bg-amber-500/10', 
+          borderColor: 'border-amber-500/50',
+          message: 'El especialista está trabajando en tu solicitud'
+        };
+      case 'completed_pending_client':
+        return { 
+          icon: Clock, 
+          color: 'text-amber-500', 
+          bgColor: 'bg-amber-500/10', 
+          borderColor: 'border-amber-500/50',
+          message: 'El especialista ha terminado. Revisa y confirma el trabajo.'
+        };
+      case 'completed':
+        return { 
+          icon: CheckCircle, 
+          color: 'text-green-500', 
+          bgColor: 'bg-green-500/10', 
+          borderColor: 'border-green-500/50',
+          message: '¡Trabajo completado exitosamente!'
+        };
+      default:
+        return { 
+          icon: FileText, 
+          color: 'text-muted-foreground', 
+          bgColor: 'bg-muted/10', 
+          borderColor: 'border-muted',
+          message: ''
+        };
+    }
+  };
 
   return (
     <MainLayout>
@@ -160,6 +240,56 @@ export default function JobDetail() {
           <ArrowLeft className="mr-2 h-4 w-4" />
           Volver al panel
         </Button>
+
+        {/* Contract Status Card */}
+        {hasActiveContract && contract && (
+          <Card className={`mb-6 ${getContractStatusInfo(contract.status).borderColor} ${getContractStatusInfo(contract.status).bgColor}`}>
+            <CardContent className="py-4">
+              <div className="flex items-start gap-3">
+                {(() => {
+                  const StatusIcon = getContractStatusInfo(contract.status).icon;
+                  return <StatusIcon className={`h-5 w-5 mt-0.5 ${getContractStatusInfo(contract.status).color}`} />;
+                })()}
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="font-medium">Estado del Contrato</p>
+                    <StatusBadge status={contract.status} />
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-1">
+                    {getContractStatusInfo(contract.status).message}
+                  </p>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
+                    <span className="flex items-center gap-1">
+                      <User className="h-3 w-3" />
+                      Especialista: <Link to={`/specialist/profile/${contract.specialist_id}`} className="text-primary hover:underline">{contract.specialist?.full_name}</Link>
+                    </span>
+                    {contract.bid?.amount && (
+                      <span className="flex items-center gap-1">
+                        <DollarSign className="h-3 w-3" />
+                        ${contract.bid.amount}
+                      </span>
+                    )}
+                  </div>
+                  <Button asChild size="sm">
+                    <Link to={`/client/contracts/${contract.id}`}>
+                      {contract.status === 'completed_pending_client' ? (
+                        <>
+                          <Check className="mr-2 h-4 w-4" />
+                          Revisar y Confirmar
+                        </>
+                      ) : (
+                        <>
+                          <FileText className="mr-2 h-4 w-4" />
+                          Ver Detalles del Contrato
+                        </>
+                      )}
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Job Details */}
         <Card className="mb-6">
