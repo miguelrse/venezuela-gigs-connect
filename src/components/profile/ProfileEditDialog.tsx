@@ -11,8 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Profile, Category } from "@/types/database";
-import { Loader2, Camera } from "lucide-react";
+import { Loader2, X, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 
 const profileSchema = z.object({
   full_name: z.string().min(2, "El nombre debe tener al menos 2 caracteres").max(100),
@@ -27,7 +28,7 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 interface ProfileEditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  profile: Profile;
+  profile: Profile & { custom_categories?: string[] };
   role: "client" | "specialist";
   selectedCategoryIds?: string[];
   onSuccess: () => void;
@@ -44,6 +45,8 @@ export function ProfileEditDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>(selectedCategoryIds);
+  const [customCategories, setCustomCategories] = useState<string[]>(profile.custom_categories || []);
+  const [newCustomCategory, setNewCustomCategory] = useState("");
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -65,6 +68,10 @@ export function ProfileEditDialog({
   useEffect(() => {
     setSelectedCategories(selectedCategoryIds);
   }, [selectedCategoryIds]);
+
+  useEffect(() => {
+    setCustomCategories(profile.custom_categories || []);
+  }, [profile.custom_categories]);
 
   useEffect(() => {
     form.reset({
@@ -93,20 +100,47 @@ export function ProfileEditDialog({
     );
   };
 
+  const addCustomCategory = () => {
+    const trimmed = newCustomCategory.trim();
+    if (trimmed && !customCategories.includes(trimmed)) {
+      setCustomCategories([...customCategories, trimmed]);
+      setNewCustomCategory("");
+    }
+  };
+
+  const removeCustomCategory = (category: string) => {
+    setCustomCategories(customCategories.filter((c) => c !== category));
+  };
+
+  const handleCustomCategoryKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addCustomCategory();
+    }
+  };
+
   const onSubmit = async (values: ProfileFormValues) => {
     setIsSubmitting(true);
     try {
-      // Update profile
+      // Update profile (including custom_categories for specialists)
+      const updateData: Record<string, unknown> = {
+        full_name: values.full_name,
+        phone: values.phone || null,
+        location: values.location || null,
+        bio: values.bio || null,
+        avatar_url: values.avatar_url || null,
+      };
+
+      if (role === "specialist") {
+        updateData.custom_categories = customCategories;
+      }
+
       const { error: profileError } = await supabase
         .from("profiles")
-        .update({
-          full_name: values.full_name,
-          phone: values.phone || null,
-          location: values.location || null,
-          bio: values.bio || null,
-          avatar_url: values.avatar_url || null,
-        })
+        .update(updateData)
         .eq("user_id", profile.user_id);
+
+      if (profileError) throw profileError;
 
       if (profileError) throw profileError;
 
@@ -267,6 +301,58 @@ export function ProfileEditDialog({
                       <span className="text-sm">{category.name}</span>
                     </label>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* Custom Categories for Specialists */}
+            {role === "specialist" && (
+              <div className="space-y-3">
+                <FormLabel>Otras especialidades</FormLabel>
+                <p className="text-xs text-muted-foreground">
+                  Agrega especialidades que no estén en la lista
+                </p>
+                
+                {/* Custom categories tags */}
+                {customCategories.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {customCategories.map((cat) => (
+                      <Badge
+                        key={cat}
+                        variant="secondary"
+                        className="gap-1 pr-1"
+                      >
+                        {cat}
+                        <button
+                          type="button"
+                          onClick={() => removeCustomCategory(cat)}
+                          className="ml-1 rounded-full hover:bg-muted p-0.5"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+
+                {/* Add custom category input */}
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Ej: Reparación de aires"
+                    value={newCustomCategory}
+                    onChange={(e) => setNewCustomCategory(e.target.value)}
+                    onKeyDown={handleCustomCategoryKeyDown}
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={addCustomCategory}
+                    disabled={!newCustomCategory.trim()}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             )}
