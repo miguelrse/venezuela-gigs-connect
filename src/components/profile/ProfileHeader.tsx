@@ -6,7 +6,7 @@ import { Profile, AppRole, Category } from "@/types/database";
 import { MapPin, Phone, Edit, Briefcase } from "lucide-react";
 
 interface ProfileHeaderProps {
-  profile: Profile;
+  profile: Profile & { custom_categories?: string[] };
   role: AppRole;
   averageRating: number;
   reviewCount: number;
@@ -87,19 +87,22 @@ export function ProfileHeader({
         )}
         
         {/* Specialist categories */}
-        {role === 'specialist' && categories && categories.length > 0 && (
+        {role === 'specialist' && (categories?.length || profile.custom_categories?.length) ? (
           <div className="mt-4">
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
               <Briefcase className="h-4 w-4" />
               <span>Especialidades</span>
             </div>
             <div className="flex flex-wrap gap-2">
-              {categories.map(cat => (
+              {categories?.map(cat => (
                 <Badge key={cat.id} variant="secondary">{cat.name}</Badge>
+              ))}
+              {profile.custom_categories?.map(cat => (
+                <Badge key={cat} variant="outline">{cat}</Badge>
               ))}
             </div>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

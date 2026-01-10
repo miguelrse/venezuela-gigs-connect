@@ -20,7 +20,7 @@ export default function SpecialistProfile() {
   const navigate = useNavigate();
   const { user } = useAuth();
   
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<(Profile & { custom_categories?: string[] }) | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
