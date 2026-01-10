@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
+import { ProfileEditDialog } from "@/components/profile/ProfileEditDialog";
 import { StatsCard } from "@/components/profile/StatsCard";
 import { ReviewCard } from "@/components/profile/ReviewCard";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,6 +27,7 @@ export default function ClientProfile() {
     averageRating: 0
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   const isOwnProfile = user?.id === id;
 
@@ -128,9 +130,20 @@ export default function ClientProfile() {
             averageRating={stats.averageRating}
             reviewCount={reviews.length}
             isOwnProfile={isOwnProfile}
-            onEdit={() => navigate('/client/profile/edit')}
+            onEdit={() => setIsEditOpen(true)}
           />
         </Card>
+
+        {/* Edit Profile Dialog */}
+        {isOwnProfile && (
+          <ProfileEditDialog
+            open={isEditOpen}
+            onOpenChange={setIsEditOpen}
+            profile={profile}
+            role="client"
+            onSuccess={fetchProfileData}
+          />
+        )}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
