@@ -320,7 +320,10 @@ export function ProfileEditDialog({
               {/* Image Cropper */}
               {imageToCrop ? (
                 <div className="space-y-4">
-                  <div className="relative h-64 w-full bg-muted rounded-lg overflow-hidden">
+                  <p className="text-sm text-muted-foreground text-center">
+                    Arrastra para centrar tu foto en el círculo
+                  </p>
+                  <div className="relative h-72 w-full rounded-lg overflow-hidden bg-black/90">
                     <Cropper
                       image={imageToCrop}
                       crop={crop}
@@ -331,6 +334,15 @@ export function ProfileEditDialog({
                       onCropChange={setCrop}
                       onCropComplete={onCropComplete}
                       onZoomChange={setZoom}
+                      style={{
+                        containerStyle: {
+                          backgroundColor: "rgba(0, 0, 0, 0.9)",
+                        },
+                        cropAreaStyle: {
+                          border: "3px solid hsl(var(--primary))",
+                          boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.7)",
+                        },
+                      }}
                     />
                   </div>
                   
