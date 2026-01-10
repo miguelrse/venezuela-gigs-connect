@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -10,11 +10,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Slider } from "@/components/ui/slider";
 import { Profile, Category } from "@/types/database";
-import { Loader2, X, Plus, Camera, Upload } from "lucide-react";
+import { Loader2, X, Plus, Camera, Check, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
-import { useRef } from "react";
+import Cropper, { Area } from "react-easy-crop";
 
 const profileSchema = z.object({
   full_name: z.string().min(2, "El nombre debe tener al menos 2 caracteres").max(100),
@@ -50,6 +51,12 @@ export function ProfileEditDialog({
   const [customCategories, setCustomCategories] = useState<string[]>(profile.custom_categories || []);
   const [newCustomCategory, setNewCustomCategory] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Cropper state
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -122,7 +129,49 @@ export function ProfileEditDialog({
     }
   };
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onCropComplete = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
+  const createCroppedImage = async (imageSrc: string, pixelCrop: Area): Promise<Blob> => {
+    const image = new Image();
+    image.src = imageSrc;
+    await new Promise((resolve) => (image.onload = resolve));
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("No 2d context");
+
+    // Set canvas size to the cropped size
+    canvas.width = pixelCrop.width;
+    canvas.height = pixelCrop.height;
+
+    // Draw the cropped image
+    ctx.drawImage(
+      image,
+      pixelCrop.x,
+      pixelCrop.y,
+      pixelCrop.width,
+      pixelCrop.height,
+      0,
+      0,
+      pixelCrop.width,
+      pixelCrop.height
+    );
+
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error("Canvas is empty"));
+        },
+        "image/jpeg",
+        0.9
+      );
+    });
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -138,15 +187,33 @@ export function ProfileEditDialog({
       return;
     }
 
+    // Read file and show cropper
+    const reader = new FileReader();
+    reader.onload = () => {
+      setImageToCrop(reader.result as string);
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
+    };
+    reader.readAsDataURL(file);
+
+    // Reset input so same file can be selected again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleCropConfirm = async () => {
+    if (!imageToCrop || !croppedAreaPixels) return;
+
     setIsUploading(true);
     try {
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${profile.user_id}/${Date.now()}.${fileExt}`;
+      const croppedBlob = await createCroppedImage(imageToCrop, croppedAreaPixels);
+      const fileName = `${profile.user_id}/${Date.now()}.jpg`;
 
       // Upload to storage
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(fileName, file, { upsert: true });
+        .upload(fileName, croppedBlob, { upsert: true, contentType: "image/jpeg" });
 
       if (uploadError) throw uploadError;
 
@@ -156,17 +223,20 @@ export function ProfileEditDialog({
         .getPublicUrl(fileName);
 
       form.setValue("avatar_url", urlData.publicUrl);
+      setImageToCrop(null);
       toast.success("Foto subida correctamente");
     } catch (error) {
       console.error("Error uploading avatar:", error);
       toast.error("Error al subir la foto");
     } finally {
       setIsUploading(false);
-      // Reset input so same file can be selected again
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
     }
+  };
+
+  const handleCropCancel = () => {
+    setImageToCrop(null);
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
   };
 
   const onSubmit = async (values: ProfileFormValues) => {
@@ -246,62 +316,123 @@ export function ProfileEditDialog({
             {/* Avatar Upload */}
             <div className="space-y-3">
               <FormLabel>Foto de perfil</FormLabel>
-              <div className="flex items-center gap-4">
-                <div className="relative">
-                  <Avatar className="h-24 w-24 border-2 border-border">
-                    <AvatarImage src={watchedAvatarUrl || undefined} />
-                    <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
-                      {initials}
-                    </AvatarFallback>
-                  </Avatar>
-                  {isUploading && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-full">
-                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                    </div>
-                  )}
-                </div>
-                <div className="flex flex-col gap-2">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleFileSelect}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploading}
-                  >
-                    <Camera className="h-4 w-4 mr-2" />
-                    Subir foto
-                  </Button>
-                  <p className="text-xs text-muted-foreground">
-                    JPG, PNG. Máx 5MB
-                  </p>
-                </div>
-              </div>
               
-              {/* Optional URL input */}
-              <FormField
-                control={form.control}
-                name="avatar_url"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs text-muted-foreground">O ingresa una URL</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="https://ejemplo.com/avatar.jpg"
-                        {...field}
-                        className="text-sm"
+              {/* Image Cropper */}
+              {imageToCrop ? (
+                <div className="space-y-4">
+                  <div className="relative h-64 w-full bg-muted rounded-lg overflow-hidden">
+                    <Cropper
+                      image={imageToCrop}
+                      crop={crop}
+                      zoom={zoom}
+                      aspect={1}
+                      cropShape="round"
+                      showGrid={false}
+                      onCropChange={setCrop}
+                      onCropComplete={onCropComplete}
+                      onZoomChange={setZoom}
+                    />
+                  </div>
+                  
+                  {/* Zoom slider */}
+                  <div className="space-y-2">
+                    <label className="text-sm text-muted-foreground">Zoom</label>
+                    <Slider
+                      value={[zoom]}
+                      min={1}
+                      max={3}
+                      step={0.1}
+                      onValueChange={(value) => setZoom(value[0])}
+                    />
+                  </div>
+                  
+                  {/* Cropper actions */}
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCropCancel}
+                      disabled={isUploading}
+                    >
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Cancelar
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleCropConfirm}
+                      disabled={isUploading}
+                    >
+                      {isUploading ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Check className="h-4 w-4 mr-2" />
+                      )}
+                      Confirmar
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-4">
+                    <div className="relative">
+                      <Avatar className="h-24 w-24 border-2 border-border">
+                        <AvatarImage src={watchedAvatarUrl || undefined} />
+                        <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
+                          {initials}
+                        </AvatarFallback>
+                      </Avatar>
+                      {isUploading && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-full">
+                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleFileSelect}
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                      >
+                        <Camera className="h-4 w-4 mr-2" />
+                        Subir foto
+                      </Button>
+                      <p className="text-xs text-muted-foreground">
+                        JPG, PNG. Máx 5MB
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Optional URL input */}
+                  <FormField
+                    control={form.control}
+                    name="avatar_url"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs text-muted-foreground">O ingresa una URL</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="https://ejemplo.com/avatar.jpg"
+                            {...field}
+                            className="text-sm"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
             </div>
 
             <FormField
