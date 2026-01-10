@@ -16,6 +16,9 @@ import SpecialistProfile from "./pages/specialist/Profile";
 import BrowseJobs from "./pages/specialist/BrowseJobs";
 import SpecialistJobDetail from "./pages/specialist/JobDetail";
 import MyBids from "./pages/specialist/MyBids";
+import MyContracts from "./pages/specialist/MyContracts";
+import SpecialistContractDetail from "./pages/specialist/ContractDetail";
+import ClientContractDetail from "./pages/client/ContractDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -69,6 +72,7 @@ function AppRoutes() {
       <Route path="/client/jobs" element={<ProtectedRoute allowedRoles={['client', 'admin']}><JobsList /></ProtectedRoute>} />
       <Route path="/client/jobs/new" element={<ProtectedRoute allowedRoles={['client', 'admin']}><CreateJob /></ProtectedRoute>} />
       <Route path="/client/jobs/:id" element={<ProtectedRoute allowedRoles={['client', 'admin']}><JobDetail /></ProtectedRoute>} />
+      <Route path="/client/contracts/:id" element={<ProtectedRoute allowedRoles={['client', 'admin']}><ClientContractDetail /></ProtectedRoute>} />
       
       {/* Specialist Routes */}
       <Route path="/specialist" element={<ProtectedRoute allowedRoles={['specialist', 'admin']}><SpecialistDashboard /></ProtectedRoute>} />
@@ -76,6 +80,8 @@ function AppRoutes() {
       <Route path="/specialist/browse" element={<ProtectedRoute allowedRoles={['specialist', 'admin']}><BrowseJobs /></ProtectedRoute>} />
       <Route path="/specialist/jobs/:id" element={<ProtectedRoute allowedRoles={['specialist', 'admin']}><SpecialistJobDetail /></ProtectedRoute>} />
       <Route path="/specialist/bids" element={<ProtectedRoute allowedRoles={['specialist', 'admin']}><MyBids /></ProtectedRoute>} />
+      <Route path="/specialist/contracts" element={<ProtectedRoute allowedRoles={['specialist', 'admin']}><MyContracts /></ProtectedRoute>} />
+      <Route path="/specialist/contracts/:id" element={<ProtectedRoute allowedRoles={['specialist', 'admin']}><SpecialistContractDetail /></ProtectedRoute>} />
       
       <Route path="*" element={<NotFound />} />
     </Routes>

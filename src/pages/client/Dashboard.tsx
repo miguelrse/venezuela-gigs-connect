@@ -6,18 +6,28 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { Plus, Briefcase, FileText, CheckCircle } from 'lucide-react';
-import type { Job } from '@/types/database';
+import { Plus, Briefcase, FileText, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import type { Job, ContractStatus } from '@/types/database';
+
+interface PendingContract {
+  id: string;
+  status: ContractStatus;
+  job: { id: string; title: string } | null;
+  specialist_id: string;
+  specialist?: { full_name: string };
+}
 
 export default function ClientDashboard() {
   const { user, profile } = useAuth();
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [pendingContracts, setPendingContracts] = useState<PendingContract[]>([]);
   const [stats, setStats] = useState({ total: 0, open: 0, completed: 0 });
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (user) {
       fetchJobs();
+      fetchPendingContracts();
     }
   }, [user]);
 
@@ -39,6 +49,30 @@ export default function ClientDashboard() {
     setIsLoading(false);
   };
 
+  const fetchPendingContracts = async () => {
+    const { data } = await supabase
+      .from('contracts')
+      .select('id, status, specialist_id, job:jobs(id, title)')
+      .eq('client_id', user!.id)
+      .eq('status', 'completed_pending_client');
+
+    if (data && data.length > 0) {
+      // Fetch specialist names
+      const specialistIds = [...new Set(data.map(c => c.specialist_id))];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, full_name')
+        .in('user_id', specialistIds);
+
+      const contractsWithSpecialists = data.map(contract => ({
+        ...contract,
+        specialist: profiles?.find(p => p.user_id === contract.specialist_id)
+      }));
+
+      setPendingContracts(contractsWithSpecialists as PendingContract[]);
+    }
+  };
+
   return (
     <MainLayout>
       <div className="container-wide py-8">
@@ -56,6 +90,43 @@ export default function ClientDashboard() {
             </Link>
           </Button>
         </div>
+
+        {/* Pending Confirmations Alert */}
+        {pendingContracts.length > 0 && (
+          <Card className="mb-8 border-amber-500/50 bg-amber-500/10">
+            <CardContent className="py-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5" />
+                <div className="flex-1">
+                  <p className="font-medium">Tienes {pendingContracts.length} trabajo(s) esperando tu confirmación</p>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Los especialistas han terminado el trabajo. Revisa y confirma la finalización.
+                  </p>
+                  <div className="space-y-2">
+                    {pendingContracts.map(contract => (
+                      <Link
+                        key={contract.id}
+                        to={`/client/contracts/${contract.id}`}
+                        className="flex items-center justify-between p-3 rounded-lg bg-background/50 hover:bg-background transition-colors"
+                      >
+                        <div>
+                          <p className="font-medium">{contract.job?.title}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Por: {contract.specialist?.full_name || 'Especialista'}
+                          </p>
+                        </div>
+                        <Button size="sm">
+                          <Clock className="mr-2 h-4 w-4" />
+                          Revisar
+                        </Button>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Stats */}
         <div className="grid md:grid-cols-3 gap-4 mb-8">

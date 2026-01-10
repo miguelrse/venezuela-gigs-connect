@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { ArrowLeft, MapPin, Calendar, DollarSign, User } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, DollarSign, User, FileText } from 'lucide-react';
 import type { Bid, JobStatus } from '@/types/database';
 
 interface BidWithClient extends Omit<Bid, 'job'> {
@@ -99,60 +99,85 @@ export default function MyBids() {
               </div>
             ) : (
               <div className="space-y-4">
-                {bids.map((bid) => (
-                  <div
-                    key={bid.id}
-                    className="p-4 rounded-lg border"
-                  >
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-medium truncate">{bid.job?.title}</h3>
-                          <StatusBadge status={bid.status} />
-                        </div>
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                          {bid.client && (
-                            <Link 
-                              to={`/client/profile/${bid.client.user_id}`}
-                              className="flex items-center gap-1 hover:text-primary transition-colors"
-                            >
-                              <User className="h-3 w-3" />
-                              {bid.client.full_name}
-                            </Link>
-                          )}
-                          <span>{bid.job?.category?.name || 'Sin categoría'}</span>
-                          {bid.job?.location && (
-                            <span className="flex items-center gap-1">
-                              <MapPin className="h-3 w-3" />
-                              {bid.job.location}
-                            </span>
-                          )}
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {formatDate(bid.created_at)}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <div className="flex items-center gap-1 font-semibold">
-                            <DollarSign className="h-4 w-4" />
-                            {bid.amount}
+                {bids.map((bid) => {
+                  // Determine where to navigate based on bid status
+                  const isAccepted = bid.status === 'accepted';
+                  const linkTo = isAccepted 
+                    ? `/specialist/contracts` // Will navigate to contracts page, user can find their contract
+                    : bid.job?.status === 'open' 
+                      ? `/specialist/jobs/${bid.job?.id}` 
+                      : undefined;
+                  
+                  const CardWrapper = linkTo ? Link : 'div';
+                  const cardProps = linkTo ? { to: linkTo } : {};
+                  
+                  return (
+                    <CardWrapper
+                      key={bid.id}
+                      {...(cardProps as any)}
+                      className={`block p-4 rounded-lg border ${linkTo ? 'hover:border-primary/50 hover:bg-accent/30 cursor-pointer' : ''} transition-colors`}
+                    >
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-medium truncate">{bid.job?.title}</h3>
+                            <StatusBadge status={bid.status} />
                           </div>
-                          {bid.eta && (
-                            <p className="text-xs text-muted-foreground">{bid.eta}</p>
-                          )}
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                            {bid.client && (
+                              <span 
+                                onClick={(e) => e.stopPropagation()}
+                                className="flex items-center gap-1"
+                              >
+                                <User className="h-3 w-3" />
+                                <Link 
+                                  to={`/client/profile/${bid.client.user_id}`}
+                                  className="hover:text-primary transition-colors"
+                                >
+                                  {bid.client.full_name}
+                                </Link>
+                              </span>
+                            )}
+                            <span>{bid.job?.category?.name || 'Sin categoría'}</span>
+                            {bid.job?.location && (
+                              <span className="flex items-center gap-1">
+                                <MapPin className="h-3 w-3" />
+                                {bid.job.location}
+                              </span>
+                            )}
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {formatDate(bid.created_at)}
+                            </span>
+                          </div>
                         </div>
-                        <StatusBadge status={bid.job?.status as JobStatus} />
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <div className="flex items-center gap-1 font-semibold">
+                              <DollarSign className="h-4 w-4" />
+                              {bid.amount}
+                            </div>
+                            {bid.eta && (
+                              <p className="text-xs text-muted-foreground">{bid.eta}</p>
+                            )}
+                          </div>
+                          <StatusBadge status={bid.job?.status as JobStatus} />
+                        </div>
                       </div>
-                    </div>
-                    {bid.message && (
-                      <p className="mt-2 text-sm text-muted-foreground border-t pt-2">
-                        {bid.message}
-                      </p>
-                    )}
-                  </div>
-                ))}
+                      {bid.message && (
+                        <p className="mt-2 text-sm text-muted-foreground border-t pt-2">
+                          {bid.message}
+                        </p>
+                      )}
+                      {isAccepted && (
+                        <div className="mt-2 pt-2 border-t flex items-center gap-2 text-sm text-primary">
+                          <FileText className="h-4 w-4" />
+                          <span>Ver contratos para gestionar este trabajo</span>
+                        </div>
+                      )}
+                    </CardWrapper>
+                  );
+                })}
               </div>
             )}
           </CardContent>

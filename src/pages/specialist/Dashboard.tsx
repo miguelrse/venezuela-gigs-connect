@@ -6,18 +6,26 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { Search, FileText, CheckCircle, DollarSign } from 'lucide-react';
-import type { Bid } from '@/types/database';
+import { Search, FileText, CheckCircle, DollarSign, Briefcase } from 'lucide-react';
+import type { Bid, ContractStatus } from '@/types/database';
+
+interface ActiveContract {
+  id: string;
+  status: ContractStatus;
+  job: { id: string; title: string } | null;
+}
 
 export default function SpecialistDashboard() {
   const { user, profile } = useAuth();
   const [bids, setBids] = useState<Bid[]>([]);
+  const [activeContracts, setActiveContracts] = useState<ActiveContract[]>([]);
   const [stats, setStats] = useState({ submitted: 0, accepted: 0, earnings: 0 });
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (user) {
       fetchBids();
+      fetchActiveContracts();
     }
   }, [user]);
 
@@ -38,6 +46,20 @@ export default function SpecialistDashboard() {
     setIsLoading(false);
   };
 
+  const fetchActiveContracts = async () => {
+    const { data } = await supabase
+      .from('contracts')
+      .select('id, status, job:jobs(id, title)')
+      .eq('specialist_id', user!.id)
+      .in('status', ['active', 'in_progress', 'completed_pending_client'])
+      .order('created_at', { ascending: false })
+      .limit(3);
+
+    if (data) {
+      setActiveContracts(data as ActiveContract[]);
+    }
+  };
+
   return (
     <MainLayout>
       <div className="container-wide py-8">
@@ -48,12 +70,20 @@ export default function SpecialistDashboard() {
             </h1>
             <p className="text-muted-foreground">Encuentra trabajos y gana dinero</p>
           </div>
-          <Button asChild>
-            <Link to="/specialist/browse">
-              <Search className="mr-2 h-4 w-4" />
-              Buscar Trabajos
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" asChild>
+              <Link to="/specialist/contracts">
+                <Briefcase className="mr-2 h-4 w-4" />
+                Mis Contratos
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link to="/specialist/browse">
+                <Search className="mr-2 h-4 w-4" />
+                Buscar Trabajos
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {/* Stats */}
@@ -98,6 +128,32 @@ export default function SpecialistDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Active Contracts */}
+        {activeContracts.length > 0 && (
+          <Card className="mb-8">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Contratos Activos</CardTitle>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/specialist/contracts">Ver todos</Link>
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {activeContracts.map((contract) => (
+                  <Link
+                    key={contract.id}
+                    to={`/specialist/contracts/${contract.id}`}
+                    className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                  >
+                    <span className="font-medium truncate">{contract.job?.title}</span>
+                    <StatusBadge status={contract.status} />
+                  </Link>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Recent Bids */}
         <Card>
