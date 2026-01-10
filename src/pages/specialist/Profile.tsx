@@ -4,10 +4,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
+import { ProfileEditDialog } from "@/components/profile/ProfileEditDialog";
 import { StatsCard } from "@/components/profile/StatsCard";
 import { PortfolioCard } from "@/components/profile/PortfolioCard";
 import { ReviewCard } from "@/components/profile/ReviewCard";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Profile, Category, PortfolioItem, Review } from "@/types/database";
@@ -30,6 +31,7 @@ export default function SpecialistProfile() {
     totalEarnings: 0
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   const isOwnProfile = user?.id === id;
 
@@ -187,9 +189,21 @@ export default function SpecialistProfile() {
             reviewCount={reviews.length}
             categories={categories}
             isOwnProfile={isOwnProfile}
-            onEdit={() => navigate('/specialist/profile/edit')}
+            onEdit={() => setIsEditOpen(true)}
           />
         </Card>
+
+        {/* Edit Profile Dialog */}
+        {isOwnProfile && (
+          <ProfileEditDialog
+            open={isEditOpen}
+            onOpenChange={setIsEditOpen}
+            profile={profile}
+            role="specialist"
+            selectedCategoryIds={categories.map(c => c.id)}
+            onSuccess={fetchProfileData}
+          />
+        )}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
