@@ -70,11 +70,17 @@ export default function SpecialistDashboard() {
             </h1>
             <p className="text-muted-foreground">Encuentra trabajos y gana dinero</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button variant="outline" asChild>
               <Link to="/specialist/contracts">
                 <Briefcase className="mr-2 h-4 w-4" />
                 Mis Contratos
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/specialist/earnings">
+                <DollarSign className="mr-2 h-4 w-4" />
+                Ganancias
               </Link>
             </Button>
             <Button asChild>

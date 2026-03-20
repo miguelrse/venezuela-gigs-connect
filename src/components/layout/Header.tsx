@@ -90,6 +90,12 @@ export function Header() {
                     >
                       Mis Ofertas
                     </Link>
+                    <Link
+                      to="/specialist/earnings"
+                      className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      Ganancias
+                    </Link>
                   </>
                 )}
                 <DropdownMenu>

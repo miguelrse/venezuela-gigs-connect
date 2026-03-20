@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import { Header } from './Header';
+import { BottomNav } from './BottomNav';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -9,8 +10,8 @@ export function MainLayout({ children }: MainLayoutProps) {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <main className="flex-1">{children}</main>
-      <footer className="border-t py-6 mt-auto">
+      <main className="flex-1 pb-16 md:pb-0">{children}</main>
+      <footer className="border-t py-6 mt-auto hidden md:block">
         <div className="container-wide">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-2">
@@ -25,6 +26,7 @@ export function MainLayout({ children }: MainLayoutProps) {
           </div>
         </div>
       </footer>
+      <BottomNav />
     </div>
   );
 }

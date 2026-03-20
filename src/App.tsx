@@ -17,6 +17,7 @@ import BrowseJobs from "./pages/specialist/BrowseJobs";
 import SpecialistJobDetail from "./pages/specialist/JobDetail";
 import MyBids from "./pages/specialist/MyBids";
 import MyContracts from "./pages/specialist/MyContracts";
+import Earnings from "./pages/specialist/Earnings";
 import SpecialistContractDetail from "./pages/specialist/ContractDetail";
 import ClientContractDetail from "./pages/client/ContractDetail";
 import NotFound from "./pages/NotFound";
@@ -82,6 +83,7 @@ function AppRoutes() {
       <Route path="/specialist/bids" element={<ProtectedRoute allowedRoles={['specialist', 'admin']}><MyBids /></ProtectedRoute>} />
       <Route path="/specialist/contracts" element={<ProtectedRoute allowedRoles={['specialist', 'admin']}><MyContracts /></ProtectedRoute>} />
       <Route path="/specialist/contracts/:id" element={<ProtectedRoute allowedRoles={['specialist', 'admin']}><SpecialistContractDetail /></ProtectedRoute>} />
+      <Route path="/specialist/earnings" element={<ProtectedRoute allowedRoles={['specialist', 'admin']}><Earnings /></ProtectedRoute>} />
       
       <Route path="*" element={<NotFound />} />
     </Routes>

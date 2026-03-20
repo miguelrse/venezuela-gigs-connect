@@ -168,10 +168,13 @@ export type Database = {
           created_at: string | null
           description: string | null
           id: string
+          job_type: Database["public"]["Enums"]["job_type"] | null
           location: string | null
           status: Database["public"]["Enums"]["job_status"] | null
           title: string
           updated_at: string | null
+          urgency: Database["public"]["Enums"]["job_urgency"] | null
+          urgency_date: string | null
         }
         Insert: {
           budget_max?: number | null
@@ -181,10 +184,13 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          job_type?: Database["public"]["Enums"]["job_type"] | null
           location?: string | null
           status?: Database["public"]["Enums"]["job_status"] | null
           title: string
           updated_at?: string | null
+          urgency?: Database["public"]["Enums"]["job_urgency"] | null
+          urgency_date?: string | null
         }
         Update: {
           budget_max?: number | null
@@ -194,10 +200,13 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          job_type?: Database["public"]["Enums"]["job_type"] | null
           location?: string | null
           status?: Database["public"]["Enums"]["job_status"] | null
           title?: string
           updated_at?: string | null
+          urgency?: Database["public"]["Enums"]["job_urgency"] | null
+          urgency_date?: string | null
         }
         Relationships: [
           {
@@ -461,6 +470,8 @@ export type Database = {
         | "completed_pending_client"
         | "completed"
         | "canceled"
+      job_type: "presencial" | "remoto" | "hibrido"
+      job_urgency: "asap" | "flexible" | "fecha_especifica"
       payment_status:
         | "unpaid"
         | "pending_verification"
@@ -612,6 +623,8 @@ export const Constants = {
         "completed",
         "canceled",
       ],
+      job_type: ["presencial", "remoto", "hibrido"],
+      job_urgency: ["asap", "flexible", "fecha_especifica"],
       payment_status: [
         "unpaid",
         "pending_verification",
