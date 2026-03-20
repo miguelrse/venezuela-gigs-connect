@@ -83,6 +83,7 @@ function AppRoutes() {
       <Route path="/specialist/bids" element={<ProtectedRoute allowedRoles={['specialist', 'admin']}><MyBids /></ProtectedRoute>} />
       <Route path="/specialist/contracts" element={<ProtectedRoute allowedRoles={['specialist', 'admin']}><MyContracts /></ProtectedRoute>} />
       <Route path="/specialist/contracts/:id" element={<ProtectedRoute allowedRoles={['specialist', 'admin']}><SpecialistContractDetail /></ProtectedRoute>} />
+      <Route path="/specialist/earnings" element={<ProtectedRoute allowedRoles={['specialist', 'admin']}><Earnings /></ProtectedRoute>} />
       
       <Route path="*" element={<NotFound />} />
     </Routes>
