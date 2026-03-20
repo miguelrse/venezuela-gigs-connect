@@ -60,6 +60,7 @@ export default function ClientContractDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [hasReviewed, setHasReviewed] = useState(false);
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
 
   useEffect(() => {
     if (id && user) {
