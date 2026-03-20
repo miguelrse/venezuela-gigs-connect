@@ -17,6 +17,7 @@ import BrowseJobs from "./pages/specialist/BrowseJobs";
 import SpecialistJobDetail from "./pages/specialist/JobDetail";
 import MyBids from "./pages/specialist/MyBids";
 import MyContracts from "./pages/specialist/MyContracts";
+import Earnings from "./pages/specialist/Earnings";
 import SpecialistContractDetail from "./pages/specialist/ContractDetail";
 import ClientContractDetail from "./pages/client/ContractDetail";
 import NotFound from "./pages/NotFound";
