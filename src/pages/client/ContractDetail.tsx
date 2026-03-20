@@ -341,6 +341,21 @@ export default function ClientContractDetail() {
             )}
           </CardContent>
         </Card>
+        {/* Review Dialog */}
+        {contract && (
+          <ReviewDialog
+            open={isReviewOpen}
+            onOpenChange={setIsReviewOpen}
+            contractId={contract.id}
+            reviewerId={user!.id}
+            revieweeId={contract.specialist.user_id}
+            revieweeName={contract.specialist.full_name}
+            onSuccess={() => {
+              setHasReviewed(true);
+              fetchContract();
+            }}
+          />
+        )}
       </div>
     </MainLayout>
   );
