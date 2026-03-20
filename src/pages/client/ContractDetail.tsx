@@ -232,11 +232,9 @@ export default function ClientContractDetail() {
                       : '¿Qué tal fue tu experiencia? Deja una reseña para el especialista'}
                   </p>
                   {!hasReviewed && (
-                    <Button variant="outline" asChild>
-                      <Link to={`/specialist/profile/${contract.specialist.user_id}`}>
-                        <Star className="mr-2 h-4 w-4" />
-                        Dejar Reseña
-                      </Link>
+                    <Button variant="outline" onClick={() => setIsReviewOpen(true)}>
+                      <Star className="mr-2 h-4 w-4" />
+                      Dejar Reseña
                     </Button>
                   )}
                 </div>
