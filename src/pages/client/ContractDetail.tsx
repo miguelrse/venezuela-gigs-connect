@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { ArrowLeft, MapPin, DollarSign, Calendar, User, Loader2, CheckCircle, Clock, Star } from 'lucide-react';
+import { ReviewDialog } from '@/components/contracts/ReviewDialog';
 import type { ContractStatus } from '@/types/database';
 
 interface ContractWithDetails {
