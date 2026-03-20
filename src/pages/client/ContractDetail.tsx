@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { ArrowLeft, MapPin, DollarSign, Calendar, User, Loader2, CheckCircle, Clock, Star } from 'lucide-react';
+import { ReviewDialog } from '@/components/contracts/ReviewDialog';
 import type { ContractStatus } from '@/types/database';
 
 interface ContractWithDetails {
@@ -59,6 +60,7 @@ export default function ClientContractDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [hasReviewed, setHasReviewed] = useState(false);
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
 
   useEffect(() => {
     if (id && user) {
@@ -230,11 +232,9 @@ export default function ClientContractDetail() {
                       : '¿Qué tal fue tu experiencia? Deja una reseña para el especialista'}
                   </p>
                   {!hasReviewed && (
-                    <Button variant="outline" asChild>
-                      <Link to={`/specialist/profile/${contract.specialist.user_id}`}>
-                        <Star className="mr-2 h-4 w-4" />
-                        Dejar Reseña
-                      </Link>
+                    <Button variant="outline" onClick={() => setIsReviewOpen(true)}>
+                      <Star className="mr-2 h-4 w-4" />
+                      Dejar Reseña
                     </Button>
                   )}
                 </div>
@@ -341,6 +341,21 @@ export default function ClientContractDetail() {
             )}
           </CardContent>
         </Card>
+        {/* Review Dialog */}
+        {contract && (
+          <ReviewDialog
+            open={isReviewOpen}
+            onOpenChange={setIsReviewOpen}
+            contractId={contract.id}
+            reviewerId={user!.id}
+            revieweeId={contract.specialist.user_id}
+            revieweeName={contract.specialist.full_name}
+            onSuccess={() => {
+              setHasReviewed(true);
+              fetchContract();
+            }}
+          />
+        )}
       </div>
     </MainLayout>
   );
