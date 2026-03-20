@@ -10,22 +10,25 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
-import { ArrowLeft, Loader2 } from 'lucide-react';
-import type { JobFormData } from '@/types/database';
+import { ArrowLeft, Loader2, MapPin, Clock, Briefcase, DollarSign, FileText, Calendar } from 'lucide-react';
 
 export default function CreateJob() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: categories, isLoading: categoriesLoading } = useCategories();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState<JobFormData>({
+  const [formData, setFormData] = useState({
     title: '',
     description: '',
     category_id: '',
     location: '',
-    budget_min: null,
-    budget_max: null,
+    budget_min: null as number | null,
+    budget_max: null as number | null,
+    job_type: 'presencial' as 'presencial' | 'remoto' | 'hibrido',
+    urgency: 'flexible' as 'asap' | 'flexible' | 'fecha_especifica',
+    urgency_date: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -58,8 +61,11 @@ export default function CreateJob() {
         location: formData.location.trim() || null,
         budget_min: formData.budget_min,
         budget_max: formData.budget_max,
+        job_type: formData.job_type,
+        urgency: formData.urgency,
+        urgency_date: formData.urgency === 'fecha_especifica' && formData.urgency_date ? formData.urgency_date : null,
         status: 'open',
-      })
+      } as any)
       .select()
       .single();
 
@@ -89,15 +95,22 @@ export default function CreateJob() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Publicar Nuevo Trabajo</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Briefcase className="h-5 w-5 text-primary" />
+              Publicar Nuevo Trabajo
+            </CardTitle>
             <CardDescription>
               Describe el trabajo que necesitas y recibe ofertas de especialistas
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Title */}
               <div className="space-y-2">
-                <Label htmlFor="title">Título del Trabajo *</Label>
+                <Label htmlFor="title" className="flex items-center gap-1.5">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  Título del Trabajo *
+                </Label>
                 <Input
                   id="title"
                   placeholder="Ej: Reparación de aire acondicionado"
@@ -107,8 +120,12 @@ export default function CreateJob() {
                 />
               </div>
 
+              {/* Category */}
               <div className="space-y-2">
-                <Label htmlFor="category">Categoría *</Label>
+                <Label htmlFor="category" className="flex items-center gap-1.5">
+                  <Briefcase className="h-4 w-4 text-muted-foreground" />
+                  Categoría *
+                </Label>
                 <Select
                   value={formData.category_id}
                   onValueChange={(value) => setFormData({ ...formData, category_id: value })}
@@ -130,61 +147,143 @@ export default function CreateJob() {
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="location">Ubicación</Label>
-                <Input
-                  id="location"
-                  placeholder="Ej: Caracas, Los Palos Grandes"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                />
+              {/* Job Type */}
+              <div className="space-y-3">
+                <Label className="flex items-center gap-1.5">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  Tipo de Trabajo
+                </Label>
+                <RadioGroup
+                  value={formData.job_type}
+                  onValueChange={(v) => setFormData({ ...formData, job_type: v as any })}
+                  className="flex flex-wrap gap-3"
+                >
+                  <label className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border cursor-pointer transition-colors ${formData.job_type === 'presencial' ? 'border-primary bg-primary/5' : 'hover:border-muted-foreground/30'}`}>
+                    <RadioGroupItem value="presencial" />
+                    <span className="text-sm font-medium">Presencial</span>
+                  </label>
+                  <label className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border cursor-pointer transition-colors ${formData.job_type === 'remoto' ? 'border-primary bg-primary/5' : 'hover:border-muted-foreground/30'}`}>
+                    <RadioGroupItem value="remoto" />
+                    <span className="text-sm font-medium">Remoto</span>
+                  </label>
+                  <label className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border cursor-pointer transition-colors ${formData.job_type === 'hibrido' ? 'border-primary bg-primary/5' : 'hover:border-muted-foreground/30'}`}>
+                    <RadioGroupItem value="hibrido" />
+                    <span className="text-sm font-medium">Híbrido</span>
+                  </label>
+                </RadioGroup>
               </div>
 
+              {/* Location */}
+              {formData.job_type !== 'remoto' && (
+                <div className="space-y-2">
+                  <Label htmlFor="location" className="flex items-center gap-1.5">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    Ubicación
+                  </Label>
+                  <Input
+                    id="location"
+                    placeholder="Ej: Caracas, Los Palos Grandes"
+                    value={formData.location}
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  />
+                </div>
+              )}
+
+              {/* Urgency */}
+              <div className="space-y-3">
+                <Label className="flex items-center gap-1.5">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  Urgencia
+                </Label>
+                <RadioGroup
+                  value={formData.urgency}
+                  onValueChange={(v) => setFormData({ ...formData, urgency: v as any })}
+                  className="flex flex-wrap gap-3"
+                >
+                  <label className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border cursor-pointer transition-colors ${formData.urgency === 'asap' ? 'border-primary bg-primary/5' : 'hover:border-muted-foreground/30'}`}>
+                    <RadioGroupItem value="asap" />
+                    <span className="text-sm font-medium">Lo antes posible</span>
+                  </label>
+                  <label className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border cursor-pointer transition-colors ${formData.urgency === 'flexible' ? 'border-primary bg-primary/5' : 'hover:border-muted-foreground/30'}`}>
+                    <RadioGroupItem value="flexible" />
+                    <span className="text-sm font-medium">Flexible</span>
+                  </label>
+                  <label className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border cursor-pointer transition-colors ${formData.urgency === 'fecha_especifica' ? 'border-primary bg-primary/5' : 'hover:border-muted-foreground/30'}`}>
+                    <RadioGroupItem value="fecha_especifica" />
+                    <span className="text-sm font-medium">Fecha específica</span>
+                  </label>
+                </RadioGroup>
+                {formData.urgency === 'fecha_especifica' && (
+                  <div className="mt-2">
+                    <Input
+                      type="date"
+                      value={formData.urgency_date}
+                      onChange={(e) => setFormData({ ...formData, urgency_date: e.target.value })}
+                      min={new Date().toISOString().split('T')[0]}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Description */}
               <div className="space-y-2">
-                <Label htmlFor="description">Descripción</Label>
+                <Label htmlFor="description" className="flex items-center gap-1.5">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  Descripción
+                </Label>
                 <Textarea
                   id="description"
-                  placeholder="Describe el trabajo con más detalle..."
-                  rows={4}
+                  placeholder={"¿Qué necesitas?\nEj: Necesito instalar un aire acondicionado split de 12,000 BTU en una habitación del segundo piso.\n\nDetalles adicionales:\n- La habitación ya tiene el tubo de desagüe\n- Tengo el equipo, solo falta la instalación"}
+                  rows={5}
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Mientras más detallada sea la descripción, mejores ofertas recibirás
+                </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="budget_min">Presupuesto Mínimo ($)</Label>
-                  <Input
-                    id="budget_min"
-                    type="number"
-                    min="0"
-                    step="1"
-                    placeholder="0"
-                    value={formData.budget_min ?? ''}
-                    onChange={(e) => setFormData({ 
-                      ...formData, 
-                      budget_min: e.target.value ? Number(e.target.value) : null 
-                    })}
-                  />
+              {/* Budget */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  Presupuesto ($)
+                </Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="1"
+                      placeholder="Mínimo"
+                      value={formData.budget_min ?? ''}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        budget_min: e.target.value ? Number(e.target.value) : null 
+                      })}
+                    />
+                  </div>
+                  <div>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="1"
+                      placeholder="Máximo"
+                      value={formData.budget_max ?? ''}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        budget_max: e.target.value ? Number(e.target.value) : null 
+                      })}
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="budget_max">Presupuesto Máximo ($)</Label>
-                  <Input
-                    id="budget_max"
-                    type="number"
-                    min="0"
-                    step="1"
-                    placeholder="0"
-                    value={formData.budget_max ?? ''}
-                    onChange={(e) => setFormData({ 
-                      ...formData, 
-                      budget_max: e.target.value ? Number(e.target.value) : null 
-                    })}
-                  />
-                </div>
+                <p className="text-xs text-muted-foreground">
+                  Opcional. Ayuda a los especialistas a enviarte ofertas ajustadas a tu presupuesto
+                </p>
               </div>
 
-              <div className="flex gap-4 pt-4">
+              {/* Actions */}
+              <div className="flex gap-4 pt-4 border-t">
                 <Button
                   type="button"
                   variant="outline"

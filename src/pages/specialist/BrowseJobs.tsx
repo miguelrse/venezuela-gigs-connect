@@ -6,17 +6,22 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MapPin, DollarSign, Calendar, ArrowLeft, Search, Filter } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { MapPin, DollarSign, Calendar, ArrowLeft, Search, Filter, Clock, Zap, Wifi, Building } from 'lucide-react';
 import type { Job } from '@/types/database';
 
 export default function BrowseJobs() {
   const { data: categories } = useCategories();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'recent' | 'budget'>('recent');
   const [filters, setFilters] = useState({
     category: '',
     location: '',
+    job_type: '',
   });
 
   useEffect(() => {
@@ -31,31 +36,44 @@ export default function BrowseJobs() {
       .eq('status', 'open')
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching jobs:', error);
-    }
-
     if (data) {
       setJobs(data as unknown as Job[]);
     }
     setIsLoading(false);
   };
 
-  const filteredJobs = jobs.filter((job) => {
-    if (filters.category && (job.category as any)?.name !== filters.category) {
-      return false;
-    }
-    if (filters.location && !job.location?.toLowerCase().includes(filters.location.toLowerCase())) {
-      return false;
-    }
-    return true;
-  });
-
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('es-VE', {
-      day: 'numeric',
-      month: 'short',
+  const filteredJobs = jobs
+    .filter((job) => {
+      if (filters.category && (job.category as any)?.name !== filters.category) return false;
+      if (filters.location && !job.location?.toLowerCase().includes(filters.location.toLowerCase())) return false;
+      if (filters.job_type && (job as any).job_type !== filters.job_type) return false;
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const matchTitle = job.title.toLowerCase().includes(q);
+        const matchDesc = job.description?.toLowerCase().includes(q);
+        const matchCat = (job.category as any)?.name?.toLowerCase().includes(q);
+        if (!matchTitle && !matchDesc && !matchCat) return false;
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'budget') {
+        return (b.budget_max || b.budget_min || 0) - (a.budget_max || a.budget_min || 0);
+      }
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
+
+  const timeAgo = (date: string) => {
+    const now = new Date();
+    const d = new Date(date);
+    const diffMs = now.getTime() - d.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 60) return `Hace ${diffMins} min`;
+    const diffHrs = Math.floor(diffMins / 60);
+    if (diffHrs < 24) return `Hace ${diffHrs}h`;
+    const diffDays = Math.floor(diffHrs / 24);
+    if (diffDays < 7) return `Hace ${diffDays}d`;
+    return new Date(date).toLocaleDateString('es-VE', { day: 'numeric', month: 'short' });
   };
 
   const formatBudget = (min: number | null, max: number | null) => {
@@ -65,13 +83,34 @@ export default function BrowseJobs() {
     return `Hasta $${max}`;
   };
 
+  const getJobTypeIcon = (type: string) => {
+    switch (type) {
+      case 'remoto': return <Wifi className="h-3 w-3" />;
+      case 'hibrido': return <Building className="h-3 w-3" />;
+      default: return <MapPin className="h-3 w-3" />;
+    }
+  };
+
+  const getJobTypeLabel = (type: string) => {
+    switch (type) {
+      case 'remoto': return 'Remoto';
+      case 'hibrido': return 'Híbrido';
+      default: return 'Presencial';
+    }
+  };
+
+  const getUrgencyBadge = (urgency: string) => {
+    if (urgency === 'asap') return <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Urgente</Badge>;
+    return null;
+  };
+
   return (
     <MainLayout>
       <div className="container-wide py-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
             <h1 className="text-3xl font-display font-bold">Trabajos Disponibles</h1>
-            <p className="text-muted-foreground">Encuentra trabajos y envía tu oferta</p>
+            <p className="text-muted-foreground">{filteredJobs.length} trabajos encontrados</p>
           </div>
           <Button variant="outline" asChild>
             <Link to="/specialist">
@@ -81,41 +120,69 @@ export default function BrowseJobs() {
           </Button>
         </div>
 
-        {/* Filters */}
+        {/* Search and Filters */}
         <Card className="mb-6">
           <CardContent className="pt-6">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar por ubicación..."
-                    className="pl-10"
-                    value={filters.location}
-                    onChange={(e) => setFilters({ ...filters, location: e.target.value })}
-                  />
-                </div>
+            <div className="flex flex-col gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por título, categoría o descripción..."
+                  className="pl-10"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
               </div>
-              <Select
-                value={filters.category}
-                onValueChange={(value) => setFilters({ ...filters, category: value === 'all' ? '' : value })}
-              >
-                <SelectTrigger className="w-full md:w-[200px]">
-                  <Filter className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Categoría" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas las categorías</SelectItem>
-                  {categories?.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.name}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Select
+                  value={filters.category}
+                  onValueChange={(value) => setFilters({ ...filters, category: value === 'all' ? '' : value })}
+                >
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <Filter className="mr-2 h-4 w-4" />
+                    <SelectValue placeholder="Categoría" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas</SelectItem>
+                    {categories?.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={filters.job_type}
+                  onValueChange={(value) => setFilters({ ...filters, job_type: value === 'all' ? '' : value })}
+                >
+                  <SelectTrigger className="w-full sm:w-[160px]">
+                    <SelectValue placeholder="Tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los tipos</SelectItem>
+                    <SelectItem value="presencial">Presencial</SelectItem>
+                    <SelectItem value="remoto">Remoto</SelectItem>
+                    <SelectItem value="hibrido">Híbrido</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input
+                  placeholder="Filtrar por ubicación..."
+                  value={filters.location}
+                  onChange={(e) => setFilters({ ...filters, location: e.target.value })}
+                  className="w-full sm:w-[200px]"
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
+
+        {/* Sort Tabs */}
+        <div className="mb-4">
+          <Tabs value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
+            <TabsList>
+              <TabsTrigger value="recent">Más Recientes</TabsTrigger>
+              <TabsTrigger value="budget">Mayor Presupuesto</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
 
         {/* Jobs List */}
         {isLoading ? (
@@ -130,41 +197,50 @@ export default function BrowseJobs() {
           <div className="grid gap-4">
             {filteredJobs.map((job) => (
               <Link key={job.id} to={`/specialist/jobs/${job.id}`}>
-                <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                <Card className="hover:shadow-md hover:border-primary/30 transition-all cursor-pointer">
                   <CardContent className="pt-6">
-                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary font-medium">
-                            {(job.category as any)?.name || 'General'}
-                          </span>
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {formatDate(job.created_at)}
-                          </span>
-                        </div>
-                        <h3 className="font-semibold text-lg mb-2">{job.title}</h3>
-                        {job.description && (
-                          <p className="text-muted-foreground text-sm line-clamp-2 mb-3">
-                            {job.description}
-                          </p>
-                        )}
-                        <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                          {job.location && (
-                            <span className="flex items-center gap-1">
-                              <MapPin className="h-4 w-4" />
-                              {job.location}
-                            </span>
-                          )}
-                          {formatBudget(job.budget_min, job.budget_max) && (
-                            <span className="flex items-center gap-1 font-medium text-foreground">
-                              <DollarSign className="h-4 w-4" />
-                              {formatBudget(job.budget_min, job.budget_max)}
-                            </span>
-                          )}
-                        </div>
+                    <div className="flex flex-col gap-3">
+                      {/* Top row: badges */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant="secondary" className="text-xs">
+                          {(job.category as any)?.name || 'General'}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs flex items-center gap-1">
+                          {getJobTypeIcon((job as any).job_type || 'presencial')}
+                          {getJobTypeLabel((job as any).job_type || 'presencial')}
+                        </Badge>
+                        {getUrgencyBadge((job as any).urgency || 'flexible')}
+                        <span className="text-xs text-muted-foreground ml-auto flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {timeAgo(job.created_at)}
+                        </span>
                       </div>
-                      <Button className="shrink-0">Ver Detalles</Button>
+
+                      {/* Title */}
+                      <h3 className="font-semibold text-lg leading-tight">{job.title}</h3>
+
+                      {/* Description preview */}
+                      {job.description && (
+                        <p className="text-muted-foreground text-sm line-clamp-2">
+                          {job.description}
+                        </p>
+                      )}
+
+                      {/* Bottom row: location + budget */}
+                      <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground pt-1">
+                        {job.location && (
+                          <span className="flex items-center gap-1">
+                            <MapPin className="h-4 w-4" />
+                            {job.location}
+                          </span>
+                        )}
+                        {formatBudget(job.budget_min, job.budget_max) && (
+                          <span className="flex items-center gap-1 font-semibold text-foreground">
+                            <DollarSign className="h-4 w-4 text-primary" />
+                            {formatBudget(job.budget_min, job.budget_max)}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
