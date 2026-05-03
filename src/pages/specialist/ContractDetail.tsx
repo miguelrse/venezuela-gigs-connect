@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { stripGeoMarker } from '@/lib/geo';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -259,7 +260,7 @@ export default function ContractDetail() {
             {contract.job?.description && (
               <div className="pt-4 border-t">
                 <h4 className="font-medium mb-2">Descripción del trabajo</h4>
-                <p className="text-muted-foreground whitespace-pre-wrap">{contract.job.description}</p>
+                <p className="text-muted-foreground whitespace-pre-wrap">{stripGeoMarker(contract.job.description)}</p>
               </div>
             )}
           </CardContent>

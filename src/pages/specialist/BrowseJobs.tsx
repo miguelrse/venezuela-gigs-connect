@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MapPin, DollarSign, ArrowLeft, Search, Filter, Clock, Zap, Wifi, Building, SlidersHorizontal, Target, Navigation, Radius } from 'lucide-react';
 import { LocationMap } from '@/components/ui/location-map';
-import { formatDistanceKm, getCurrentCoordinates, haversineDistanceKm, type Coordinates } from '@/lib/geo';
+import { formatDistanceKm, getCurrentCoordinates, haversineDistanceKm, parseGeoMarker, stripGeoMarker, type Coordinates } from '@/lib/geo';
 import type { Job, JobType, JobUrgency } from '@/types/database';
 
 export default function BrowseJobs() {
@@ -52,8 +52,9 @@ export default function BrowseJobs() {
       if (filters.location && !job.location?.toLowerCase().includes(filters.location.toLowerCase())) return false;
       if (filters.job_type && job.job_type !== filters.job_type) return false;
       if (userLocation && job.job_type !== 'remoto') {
-        if (typeof job.latitude !== 'number' || typeof job.longitude !== 'number') return false;
-        const distance = haversineDistanceKm(userLocation, { latitude: job.latitude, longitude: job.longitude });
+        const coordinates = getJobCoordinates(job);
+        if (!coordinates) return false;
+        const distance = haversineDistanceKm(userLocation, coordinates);
         if (distance > radiusKm) return false;
       }
       if (searchQuery) {
@@ -79,7 +80,7 @@ export default function BrowseJobs() {
   const urgentCount = jobs.filter((job) => job.urgency === 'asap').length;
   const remoteCount = jobs.filter((job) => job.job_type === 'remoto').length;
   const withBudgetCount = jobs.filter((job) => job.budget_min || job.budget_max).length;
-  const geolocatedCount = jobs.filter((job) => typeof job.latitude === 'number' && typeof job.longitude === 'number').length;
+  const geolocatedCount = jobs.filter((job) => Boolean(getJobCoordinates(job))).length;
   const hasActiveFilters = Boolean(searchQuery || filters.category || filters.location || filters.job_type || userLocation);
 
   const clearFilters = () => {
@@ -99,9 +100,17 @@ export default function BrowseJobs() {
     }
   };
 
+  const getJobCoordinates = (job: Job): Coordinates | null => {
+    if (typeof job.latitude === 'number' && typeof job.longitude === 'number') {
+      return { latitude: job.latitude, longitude: job.longitude };
+    }
+    return parseGeoMarker(job.description);
+  };
+
   const getJobDistance = (job: Job) => {
-    if (!userLocation || typeof job.latitude !== 'number' || typeof job.longitude !== 'number') return null;
-    return haversineDistanceKm(userLocation, { latitude: job.latitude, longitude: job.longitude });
+    const coordinates = getJobCoordinates(job);
+    if (!userLocation || !coordinates) return null;
+    return haversineDistanceKm(userLocation, coordinates);
   };
 
   const timeAgo = (date: string) => {
@@ -336,7 +345,7 @@ export default function BrowseJobs() {
                       {/* Description preview */}
                       {job.description && (
                         <p className="text-muted-foreground text-sm line-clamp-2">
-                          {job.description}
+                          {stripGeoMarker(job.description)}
                         </p>
                       )}
 

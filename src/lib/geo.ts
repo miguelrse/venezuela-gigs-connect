@@ -37,3 +37,29 @@ export const getCurrentCoordinates = () =>
       maximumAge: 60000,
     });
   });
+
+
+const GEO_MARKER_REGEX = /\n?\n?\[geo:([-0-9.]+),([-0-9.]+)(?:,([0-9.]+))?\]\s*$/;
+
+export const buildGeoMarker = (coordinates: Coordinates, accuracyM?: number | null) =>
+  `[geo:${coordinates.latitude.toFixed(6)},${coordinates.longitude.toFixed(6)}${accuracyM ? `,${Math.round(accuracyM)}` : ''}]`;
+
+export const appendGeoMarker = (description: string, coordinates?: Coordinates | null, accuracyM?: number | null) => {
+  const cleanDescription = stripGeoMarker(description);
+  if (!coordinates) return cleanDescription;
+  return `${cleanDescription}
+
+${buildGeoMarker(coordinates, accuracyM)}`;
+};
+
+export const parseGeoMarker = (text?: string | null): Coordinates | null => {
+  if (!text) return null;
+  const match = text.match(GEO_MARKER_REGEX);
+  if (!match) return null;
+  return {
+    latitude: Number(match[1]),
+    longitude: Number(match[2]),
+  };
+};
+
+export const stripGeoMarker = (text?: string | null) => text?.replace(GEO_MARKER_REGEX, '').trim() || '';

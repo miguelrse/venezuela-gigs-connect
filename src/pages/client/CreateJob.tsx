@@ -15,7 +15,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
 import { ArrowLeft, Loader2, MapPin, Clock, Briefcase, DollarSign, FileText, Sparkles, ShieldCheck, Navigation } from 'lucide-react';
 import { LocationMap } from '@/components/ui/location-map';
-import { getCurrentCoordinates } from '@/lib/geo';
+import { appendGeoMarker, getCurrentCoordinates } from '@/lib/geo';
 import type { JobType, JobUrgency } from '@/types/database';
 
 const jobTemplates = [
@@ -120,17 +120,22 @@ export default function CreateJob() {
 
     setIsSubmitting(true);
 
+    const descriptionWithGeo = appendGeoMarker(
+      formData.description.trim(),
+      formData.latitude !== null && formData.longitude !== null
+        ? { latitude: formData.latitude, longitude: formData.longitude }
+        : null,
+      formData.location_accuracy_m,
+    );
+
     const { data, error } = await supabase
       .from('jobs')
       .insert({
         client_id: user.id,
         title: formData.title.trim(),
-        description: formData.description.trim() || null,
+        description: descriptionWithGeo || null,
         category_id: formData.category_id || null,
         location: formData.location.trim() || null,
-        latitude: formData.latitude,
-        longitude: formData.longitude,
-        location_accuracy_m: formData.location_accuracy_m,
         budget_min: formData.budget_min,
         budget_max: formData.budget_max,
         job_type: formData.job_type,

@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { stripGeoMarker } from '@/lib/geo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -231,7 +232,7 @@ export default function SpecialistJobDetail() {
                     <Separator />
                     <div>
                       <h4 className="font-semibold mb-3">Descripción del trabajo</h4>
-                      <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">{job.description}</p>
+                      <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">{stripGeoMarker(job.description)}</p>
                     </div>
                   </>
                 )}
