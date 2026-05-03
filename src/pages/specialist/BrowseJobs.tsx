@@ -46,6 +46,19 @@ export default function BrowseJobs() {
     setIsLoading(false);
   };
 
+  const getJobCoordinates = (job: Job): Coordinates | null => {
+    if (typeof job.latitude === 'number' && typeof job.longitude === 'number') {
+      return { latitude: job.latitude, longitude: job.longitude };
+    }
+    return parseGeoMarker(job.description);
+  };
+
+  const getJobDistance = (job: Job) => {
+    const coordinates = getJobCoordinates(job);
+    if (!userLocation || !coordinates) return null;
+    return haversineDistanceKm(userLocation, coordinates);
+  };
+
   const filteredJobs = jobs
     .filter((job) => {
       if (filters.category && job.category?.name !== filters.category) return false;

@@ -170,9 +170,6 @@ export type Database = {
           id: string
           job_type: Database["public"]["Enums"]["job_type"] | null
           location: string | null
-          latitude: number | null
-          longitude: number | null
-          location_accuracy_m: number | null
           status: Database["public"]["Enums"]["job_status"] | null
           title: string
           updated_at: string | null
@@ -189,9 +186,6 @@ export type Database = {
           id?: string
           job_type?: Database["public"]["Enums"]["job_type"] | null
           location?: string | null
-          latitude?: number | null
-          longitude?: number | null
-          location_accuracy_m?: number | null
           status?: Database["public"]["Enums"]["job_status"] | null
           title: string
           updated_at?: string | null
@@ -208,9 +202,6 @@ export type Database = {
           id?: string
           job_type?: Database["public"]["Enums"]["job_type"] | null
           location?: string | null
-          latitude?: number | null
-          longitude?: number | null
-          location_accuracy_m?: number | null
           status?: Database["public"]["Enums"]["job_status"] | null
           title?: string
           updated_at?: string | null
