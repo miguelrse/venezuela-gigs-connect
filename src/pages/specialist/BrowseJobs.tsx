@@ -263,7 +263,7 @@ export default function BrowseJobs() {
                       Buscar trabajos cerca de mí
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Activa tu ubicación para ver solo solicitudes presenciales o híbridas dentro del radio seleccionado.
+                      Usa tu ubicación actual o toca el mapa para seleccionar una zona y ver solicitudes dentro del radio.
                     </p>
                   </div>
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -285,11 +285,16 @@ export default function BrowseJobs() {
                     </Button>
                   </div>
                 </div>
-                {userLocation && (
-                  <div className="mt-4">
-                    <LocationMap latitude={userLocation.latitude} longitude={userLocation.longitude} radiusKm={radiusKm} label="Tu zona de búsqueda" />
-                  </div>
-                )}
+                <div className="mt-4">
+                  <LocationMap
+                    latitude={userLocation?.latitude}
+                    longitude={userLocation?.longitude}
+                    radiusKm={radiusKm}
+                    label="Tu zona de búsqueda"
+                    selectable
+                    onLocationSelect={(latitude, longitude) => setUserLocation({ latitude, longitude })}
+                  />
+                </div>
               </div>
             </div>
           </CardContent>

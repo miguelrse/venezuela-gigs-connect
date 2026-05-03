@@ -304,6 +304,17 @@ export default function CreateJob() {
                     latitude={formData.latitude}
                     longitude={formData.longitude}
                     label="Ubicación exacta del cliente"
+                    selectable
+                    onLocationSelect={(latitude, longitude) => {
+                      setFormData({
+                        ...formData,
+                        latitude,
+                        longitude,
+                        location_accuracy_m: null,
+                        location: formData.location || 'Ubicación seleccionada en el mapa',
+                      });
+                      toast.success('Ubicación seleccionada en el mapa');
+                    }}
                   />
                   <p className="text-xs text-muted-foreground">
                     La ubicación exacta ayuda a que los especialistas cercanos filtren trabajos por radio. Si prefieres, puedes escribir solo la zona aproximada.
