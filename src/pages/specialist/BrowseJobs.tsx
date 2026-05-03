@@ -113,18 +113,7 @@ export default function BrowseJobs() {
     }
   };
 
-  const getJobCoordinates = (job: Job): Coordinates | null => {
-    if (typeof job.latitude === 'number' && typeof job.longitude === 'number') {
-      return { latitude: job.latitude, longitude: job.longitude };
-    }
-    return parseGeoMarker(job.description);
-  };
 
-  const getJobDistance = (job: Job) => {
-    const coordinates = getJobCoordinates(job);
-    if (!userLocation || !coordinates) return null;
-    return haversineDistanceKm(userLocation, coordinates);
-  };
 
   const timeAgo = (date: string) => {
     const now = new Date();
