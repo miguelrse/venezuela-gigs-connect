@@ -10,6 +10,13 @@ import { toast } from 'sonner';
 import { ArrowLeft, MapPin, DollarSign, Calendar, User, Loader2, Check, FileText, Clock, CheckCircle } from 'lucide-react';
 import type { Job, Bid, ContractStatus } from '@/types/database';
 
+type BidWithSpecialist = Bid & {
+  specialist?: {
+    full_name: string;
+    location: string | null;
+  };
+};
+
 interface ContractInfo {
   id: string;
   status: ContractStatus;
@@ -23,7 +30,7 @@ export default function JobDetail() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [job, setJob] = useState<Job | null>(null);
-  const [bids, setBids] = useState<Bid[]>([]);
+  const [bids, setBids] = useState<BidWithSpecialist[]>([]);
   const [contract, setContract] = useState<ContractInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [acceptingBidId, setAcceptingBidId] = useState<string | null>(null);
@@ -79,7 +86,7 @@ export default function JobDetail() {
         specialist: profileMap.get(bid.specialist_id) || { full_name: 'Especialista', location: null }
       }));
 
-      setBids(bidsWithProfiles as unknown as Bid[]);
+      setBids(bidsWithProfiles as BidWithSpecialist[]);
     }
   };
 
@@ -298,7 +305,7 @@ export default function JobDetail() {
               <div>
                 <CardTitle className="text-2xl">{job.title}</CardTitle>
                 <CardDescription className="flex items-center gap-2 mt-2">
-                  <span>{(job.category as any)?.name || 'Sin categoría'}</span>
+                  <span>{job.category?.name || 'Sin categoría'}</span>
                   <span>•</span>
                   <Calendar className="h-4 w-4" />
                   <span>{formatDate(job.created_at)}</span>
@@ -358,17 +365,17 @@ export default function JobDetail() {
                             to={`/specialist/profile/${bid.specialist_id}`}
                             className="font-medium text-primary hover:underline"
                           >
-                            {(bid.specialist as any)?.full_name || 'Especialista'}
+                            {bid.specialist?.full_name || 'Especialista'}
                           </Link>
                           <StatusBadge status={bid.status} />
                         </div>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <span className="font-semibold text-foreground">${bid.amount}</span>
                           {bid.eta && <span>Tiempo: {bid.eta}</span>}
-                          {(bid.specialist as any)?.location && (
+                          {bid.specialist?.location && (
                             <span className="flex items-center gap-1">
                               <MapPin className="h-3 w-3" />
-                              {(bid.specialist as any).location}
+                              {bid.specialist.location}
                             </span>
                           )}
                         </div>

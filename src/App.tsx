@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
+import Services from "./pages/Services";
+import Cities from "./pages/Cities";
 import Auth from "./pages/Auth";
 import ClientDashboard from "./pages/client/Dashboard";
 import ClientProfile from "./pages/client/Profile";
@@ -64,6 +66,8 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Index />} />
+      <Route path="/servicios" element={<Services />} />
+      <Route path="/ciudades" element={<Cities />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/profile" element={<ProfileRedirect />} />
       

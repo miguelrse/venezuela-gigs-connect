@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Menu, User, LogOut, LayoutDashboard, Briefcase, Settings } from 'lucide-react';
+import { Menu, User, LogOut, LayoutDashboard, Briefcase, Settings, Search, PlusCircle } from 'lucide-react';
 import { useState } from 'react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
@@ -51,10 +51,10 @@ export function Header() {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-primary">
-              <span className="text-lg font-bold text-primary-foreground">S</span>
+              <span className="text-lg font-bold text-primary-foreground">C</span>
             </div>
             <span className="font-display text-xl font-bold text-foreground">
-              Servicio
+              ChambaLink
             </span>
           </Link>
 
@@ -140,13 +140,37 @@ export function Header() {
             ) : (
               <>
                 <Link
+                  to="/servicios"
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Servicios
+                </Link>
+                <Link
+                  to="/ciudades"
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Ciudades
+                </Link>
+                <Link
+                  to="/#como-funciona"
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Cómo funciona
+                </Link>
+                <Link
+                  to="/auth?mode=signup&role=specialist"
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Ofrecer servicios
+                </Link>
+                <Link
                   to="/auth"
                   className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Iniciar Sesión
+                  Iniciar sesión
                 </Link>
                 <Button asChild>
-                  <Link to="/auth?mode=signup">Registrarse</Link>
+                  <Link to="/auth?mode=signup&role=client">Publicar trabajo</Link>
                 </Button>
               </>
             )}
@@ -235,15 +259,32 @@ export function Header() {
                 ) : (
                   <>
                     <Link
+                      to="/#como-funciona"
+                      className="flex items-center gap-2 text-sm font-medium py-2"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Search className="h-4 w-4" />
+                      Cómo funciona
+                    </Link>
+                    <Link
+                      to="/auth?mode=signup&role=specialist"
+                      className="flex items-center gap-2 text-sm font-medium py-2"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Briefcase className="h-4 w-4" />
+                      Ofrecer servicios
+                    </Link>
+                    <Link
                       to="/auth"
                       className="text-sm font-medium py-2"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      Iniciar Sesión
+                      Iniciar sesión
                     </Link>
                     <Button asChild>
-                      <Link to="/auth?mode=signup" onClick={() => setMobileMenuOpen(false)}>
-                        Registrarse
+                      <Link to="/auth?mode=signup&role=client" onClick={() => setMobileMenuOpen(false)}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Publicar trabajo
                       </Link>
                     </Button>
                   </>

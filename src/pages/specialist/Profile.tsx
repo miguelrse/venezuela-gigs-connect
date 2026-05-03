@@ -9,10 +9,11 @@ import { StatsCard } from "@/components/profile/StatsCard";
 import { PortfolioCard } from "@/components/profile/PortfolioCard";
 import { ReviewCard } from "@/components/profile/ReviewCard";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Profile, Category, PortfolioItem, Review } from "@/types/database";
-import { Briefcase, CheckCircle, Star, DollarSign, Plus, ImageIcon } from "lucide-react";
+import { Briefcase, CheckCircle, Star, DollarSign, Plus, ImageIcon, BadgeCheck, Clock3, MessageCircle, ShieldCheck, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 export default function SpecialistProfile() {
@@ -193,6 +194,41 @@ export default function SpecialistProfile() {
           />
         </Card>
 
+        <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="p-5">
+              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <Badge className="mb-3 bg-primary text-primary-foreground">Perfil profesional</Badge>
+                  <h2 className="font-display text-2xl font-bold">{profile.full_name} puede recibir solicitudes directas</h2>
+                  <p className="mt-2 text-sm text-muted-foreground max-w-2xl">
+                    Este perfil funciona como una vitrina de venta: categorías, reputación, trabajos anteriores y datos de contacto ayudan al cliente a decidir con confianza.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row lg:flex-col">
+                  <Button>
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    Solicitar cotización
+                  </Button>
+                  <Button variant="outline">
+                    <Briefcase className="mr-2 h-4 w-4" />
+                    Invitar a trabajo
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="grid gap-3 p-5 text-sm">
+              <div className="flex items-center gap-2 font-semibold"><ShieldCheck className="h-4 w-4 text-primary" /> Señales de confianza</div>
+              <div className="flex items-center gap-2 text-muted-foreground"><BadgeCheck className="h-4 w-4 text-primary" /> Perfil con identidad y ciudad visible</div>
+              <div className="flex items-center gap-2 text-muted-foreground"><Star className="h-4 w-4 text-warning" /> Reviews después de contratos completados</div>
+              <div className="flex items-center gap-2 text-muted-foreground"><Clock3 className="h-4 w-4 text-info" /> Respuesta rápida recomendada</div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Edit Profile Dialog */}
         {isOwnProfile && (
           <ProfileEditDialog
@@ -236,10 +272,28 @@ export default function SpecialistProfile() {
 
         {/* Tabs: Portfolio & Reviews */}
         <Tabs defaultValue="portfolio" className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full max-w-2xl grid-cols-3">
+            <TabsTrigger value="services">Servicios</TabsTrigger>
             <TabsTrigger value="portfolio">Portafolio</TabsTrigger>
             <TabsTrigger value="reviews">Reseñas ({reviews.length})</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="services" className="mt-6">
+            <div className="grid gap-4 md:grid-cols-3">
+              {(categories.length > 0 ? categories : [{ id: 'general', name: 'Servicio general', icon: null, active: true, created_at: '' }]).map((category) => (
+                <Card key={category.id} className="hover:border-primary/30 transition-colors">
+                  <CardContent className="p-5">
+                    <Sparkles className="mb-4 h-6 w-6 text-primary" />
+                    <h3 className="font-semibold">{category.name}</h3>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      Solicita una cotización con descripción, ubicación, fecha y presupuesto estimado.
+                    </p>
+                    <Button className="mt-4 w-full" variant="outline">Pedir cotización</Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
 
           <TabsContent value="portfolio" className="mt-6">
             {isOwnProfile && (

@@ -197,7 +197,8 @@
   }
 
   /* Container padding */
-  .container-tight {
+  .container-tight,
+  .container-narrow {
     @apply max-w-5xl mx-auto px-4 sm:px-6 lg:px-8;
   }
 

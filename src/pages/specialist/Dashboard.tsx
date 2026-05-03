@@ -4,10 +4,13 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { Search, FileText, CheckCircle, DollarSign, Briefcase } from 'lucide-react';
-import type { Bid, ContractStatus } from '@/types/database';
+import { Search, FileText, CheckCircle, DollarSign, Briefcase, BadgeCheck, Clock3, Sparkles, Target } from 'lucide-react';
+import type { Bid, ContractStatus, Job } from '@/types/database';
+
+type BidWithJob = Bid & { job?: Pick<Job, 'title' | 'location' | 'status'> };
 
 interface ActiveContract {
   id: string;
@@ -17,7 +20,7 @@ interface ActiveContract {
 
 export default function SpecialistDashboard() {
   const { user, profile } = useAuth();
-  const [bids, setBids] = useState<Bid[]>([]);
+  const [bids, setBids] = useState<BidWithJob[]>([]);
   const [activeContracts, setActiveContracts] = useState<ActiveContract[]>([]);
   const [stats, setStats] = useState({ submitted: 0, accepted: 0, earnings: 0 });
   const [isLoading, setIsLoading] = useState(true);
@@ -30,19 +33,51 @@ export default function SpecialistDashboard() {
   }, [user]);
 
   const fetchBids = async () => {
-    const { data } = await supabase
-      .from('bids')
-      .select('*, job:jobs(title, location, status)')
-      .eq('specialist_id', user!.id)
-      .order('created_at', { ascending: false })
-      .limit(5);
+    const [recentBids, submittedBids, acceptedBids, contracts] = await Promise.all([
+      supabase
+        .from('bids')
+        .select('*, job:jobs(title, location, status)')
+        .eq('specialist_id', user!.id)
+        .order('created_at', { ascending: false })
+        .limit(5),
+      supabase
+        .from('bids')
+        .select('id', { count: 'exact', head: true })
+        .eq('specialist_id', user!.id)
+        .eq('status', 'submitted'),
+      supabase
+        .from('bids')
+        .select('id', { count: 'exact', head: true })
+        .eq('specialist_id', user!.id)
+        .eq('status', 'accepted'),
+      supabase
+        .from('contracts')
+        .select('id')
+        .eq('specialist_id', user!.id),
+    ]);
 
-    if (data) {
-      setBids(data as unknown as Bid[]);
-      const submitted = data.filter((b) => b.status === 'submitted').length;
-      const accepted = data.filter((b) => b.status === 'accepted').length;
-      setStats({ submitted, accepted, earnings: 0 });
+    if (recentBids.data) {
+      setBids(recentBids.data as unknown as BidWithJob[]);
     }
+
+    const contractIds = contracts.data?.map((contract) => contract.id) ?? [];
+    let earnings = 0;
+
+    if (contractIds.length > 0) {
+      const { data: payments } = await supabase
+        .from('payments')
+        .select('payout_amount, amount')
+        .in('contract_id', contractIds)
+        .eq('status', 'released');
+
+      earnings = payments?.reduce((sum, payment) => sum + (payment.payout_amount ?? payment.amount ?? 0), 0) ?? 0;
+    }
+
+    setStats({
+      submitted: submittedBids.count ?? 0,
+      accepted: acceptedBids.count ?? 0,
+      earnings,
+    });
     setIsLoading(false);
   };
 
@@ -65,10 +100,11 @@ export default function SpecialistDashboard() {
       <div className="container-wide py-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
+            <Badge variant="outline" className="mb-2">Panel especialista</Badge>
             <h1 className="text-3xl font-display font-bold">
               Hola, {profile?.full_name?.split(' ')[0] || 'Especialista'}
             </h1>
-            <p className="text-muted-foreground">Encuentra trabajos y gana dinero</p>
+            <p className="text-muted-foreground">Encuentra solicitudes, envía propuestas ganadoras y convierte tu perfil en una vitrina de confianza.</p>
           </div>
           <div className="flex gap-2 flex-wrap">
             <Button variant="outline" asChild>
@@ -90,6 +126,32 @@ export default function SpecialistDashboard() {
               </Link>
             </Button>
           </div>
+        </div>
+
+        <div className="grid gap-4 mb-8 lg:grid-cols-[1.2fr_0.8fr]">
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="p-5">
+              <div className="flex items-start gap-4">
+                <div className="rounded-2xl bg-primary p-3 text-primary-foreground">
+                  <Target className="h-6 w-6" />
+                </div>
+                <div>
+                  <h2 className="font-display text-xl font-bold">Tu objetivo: propuestas claras, perfil fuerte y respuesta rápida</h2>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    En marketplaces tipo Upwork/Thumbtack, gana quien combina confianza + claridad. Responde con precio, alcance, tiempo estimado y una razón concreta para elegirte.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="grid gap-3 p-5 text-sm">
+              <div className="flex items-center gap-2 font-semibold"><Sparkles className="h-4 w-4 text-primary" /> Checklist para vender más</div>
+              <div className="flex items-center gap-2 text-muted-foreground"><BadgeCheck className="h-4 w-4 text-primary" /> Perfil completo y categorías claras</div>
+              <div className="flex items-center gap-2 text-muted-foreground"><Clock3 className="h-4 w-4 text-info" /> Responder en menos de 1 hora</div>
+              <div className="flex items-center gap-2 text-muted-foreground"><FileText className="h-4 w-4 text-warning" /> Propuestas con alcance y entregables</div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Stats */}
@@ -185,7 +247,7 @@ export default function SpecialistDashboard() {
                   <div key={bid.id} className="p-4 rounded-lg border">
                     <div className="flex justify-between items-start gap-4">
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-medium truncate">{(bid.job as any)?.title}</h3>
+                        <h3 className="font-medium truncate">{bid.job?.title}</h3>
                         <p className="text-sm text-muted-foreground">
                           Tu oferta: ${bid.amount} • {bid.eta || 'Sin tiempo estimado'}
                         </p>

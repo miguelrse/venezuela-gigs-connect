@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { ArrowLeft, MapPin, DollarSign, Calendar, User, Loader2, Send, CheckCircle, Clock, Wifi, Building, Star, Briefcase } from 'lucide-react';
-import type { Job, Bid, BidFormData } from '@/types/database';
+import type { Job, Bid, BidFormData, JobType, JobUrgency } from '@/types/database';
 
 interface ClientInfo {
   user_id: string;
@@ -159,11 +159,11 @@ export default function SpecialistJobDetail() {
 
   if (!job) return null;
 
-  const getJobTypeLabel = (type: string) => {
+  const getJobTypeLabel = (type: JobType) => {
     switch (type) { case 'remoto': return 'Remoto'; case 'hibrido': return 'Híbrido'; default: return 'Presencial'; }
   };
 
-  const getUrgencyLabel = (urgency: string) => {
+  const getUrgencyLabel = (urgency: JobUrgency) => {
     switch (urgency) { case 'asap': return 'Lo antes posible'; case 'fecha_especifica': return 'Fecha específica'; default: return 'Flexible'; }
   };
 
@@ -186,11 +186,11 @@ export default function SpecialistJobDetail() {
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2 flex-wrap mb-2">
-                  <Badge variant="secondary">{(job.category as any)?.name || 'General'}</Badge>
+                  <Badge variant="secondary">{job.category?.name || 'General'}</Badge>
                   <Badge variant="outline" className="text-xs">
-                    {getJobTypeLabel((job as any).job_type || 'presencial')}
+                    {getJobTypeLabel(job.job_type || 'presencial')}
                   </Badge>
-                  {(job as any).urgency === 'asap' && (
+                  {job.urgency === 'asap' && (
                     <Badge variant="destructive" className="text-xs">Urgente</Badge>
                   )}
                 </div>
@@ -202,7 +202,7 @@ export default function SpecialistJobDetail() {
                   </span>
                   <span className="flex items-center gap-1">
                     <Clock className="h-4 w-4" />
-                    {getUrgencyLabel((job as any).urgency || 'flexible')}
+                    {getUrgencyLabel(job.urgency || 'flexible')}
                   </span>
                 </div>
               </CardHeader>

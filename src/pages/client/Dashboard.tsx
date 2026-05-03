@@ -4,9 +4,10 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { Plus, Briefcase, FileText, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Plus, Briefcase, FileText, CheckCircle, Clock, AlertCircle, Search, ShieldCheck, Sparkles } from 'lucide-react';
 import type { Job, ContractStatus } from '@/types/database';
 
 interface PendingContract {
@@ -32,20 +33,38 @@ export default function ClientDashboard() {
   }, [user]);
 
   const fetchJobs = async () => {
-    const { data } = await supabase
-      .from('jobs')
-      .select('*, category:categories(name)')
-      .eq('client_id', user!.id)
-      .order('created_at', { ascending: false })
-      .limit(5);
+    const [recentJobs, totalJobs, openJobs, completedJobs] = await Promise.all([
+      supabase
+        .from('jobs')
+        .select('*, category:categories(name)')
+        .eq('client_id', user!.id)
+        .order('created_at', { ascending: false })
+        .limit(5),
+      supabase
+        .from('jobs')
+        .select('id', { count: 'exact', head: true })
+        .eq('client_id', user!.id),
+      supabase
+        .from('jobs')
+        .select('id', { count: 'exact', head: true })
+        .eq('client_id', user!.id)
+        .eq('status', 'open'),
+      supabase
+        .from('jobs')
+        .select('id', { count: 'exact', head: true })
+        .eq('client_id', user!.id)
+        .eq('status', 'completed'),
+    ]);
 
-    if (data) {
-      setJobs(data as unknown as Job[]);
-      const total = data.length;
-      const open = data.filter((j) => j.status === 'open').length;
-      const completed = data.filter((j) => j.status === 'completed').length;
-      setStats({ total, open, completed });
+    if (recentJobs.data) {
+      setJobs(recentJobs.data as unknown as Job[]);
     }
+
+    setStats({
+      total: totalJobs.count ?? 0,
+      open: openJobs.count ?? 0,
+      completed: completedJobs.count ?? 0,
+    });
     setIsLoading(false);
   };
 
@@ -78,17 +97,54 @@ export default function ClientDashboard() {
       <div className="container-wide py-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
+            <Badge variant="outline" className="mb-2">Panel cliente</Badge>
             <h1 className="text-3xl font-display font-bold">
               Hola, {profile?.full_name?.split(' ')[0] || 'Cliente'}
             </h1>
-            <p className="text-muted-foreground">Bienvenido a tu panel de cliente</p>
+            <p className="text-muted-foreground">Publica solicitudes, compara propuestas y cierra trabajos con especialistas confiables.</p>
           </div>
-          <Button asChild>
-            <Link to="/client/jobs/new">
-              <Plus className="mr-2 h-4 w-4" />
-              Nuevo Trabajo
-            </Link>
-          </Button>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button variant="outline" asChild>
+              <Link to="/client/jobs">
+                <Search className="mr-2 h-4 w-4" />
+                Mis solicitudes
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link to="/client/jobs/new">
+                <Plus className="mr-2 h-4 w-4" />
+                Nuevo Trabajo
+              </Link>
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid gap-4 mb-8 lg:grid-cols-3">
+          <Card className="lg:col-span-2 border-primary/20 bg-primary/5">
+            <CardContent className="p-5">
+              <div className="flex items-start gap-4">
+                <div className="rounded-2xl bg-primary p-3 text-primary-foreground">
+                  <Sparkles className="h-6 w-6" />
+                </div>
+                <div>
+                  <h2 className="font-display text-xl font-bold">Publica solicitudes más claras y recibe mejores ofertas</h2>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Usa título específico, presupuesto, ubicación, urgencia y detalles del resultado esperado. El marketplace debe premiar claridad, no solo precio bajo.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-5">
+              <div className="flex items-center gap-2 font-semibold"><ShieldCheck className="h-4 w-4 text-primary" /> Checklist rápido</div>
+              <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+                <li>• Revisa perfil y reseñas</li>
+                <li>• Compara tiempo + precio</li>
+                <li>• Pide fotos/referencias si aplica</li>
+              </ul>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Pending Confirmations Alert */}
@@ -201,7 +257,7 @@ export default function ClientDashboard() {
                       <div className="flex-1 min-w-0">
                         <h3 className="font-medium truncate">{job.title}</h3>
                         <p className="text-sm text-muted-foreground">
-                          {(job.category as any)?.name || 'Sin categoría'} • {job.location || 'Sin ubicación'}
+                          {job.category?.name || 'Sin categoría'} • {job.location || 'Sin ubicación'}
                         </p>
                       </div>
                       <StatusBadge status={job.status} />

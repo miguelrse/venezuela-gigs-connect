@@ -92,7 +92,7 @@ export default function JobsList() {
                           <StatusBadge status={job.status} />
                         </div>
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                          <span>{(job.category as any)?.name || 'Sin categoría'}</span>
+                          <span>{job.category?.name || 'Sin categoría'}</span>
                           {job.location && (
                             <span className="flex items-center gap-1">
                               <MapPin className="h-3 w-3" />

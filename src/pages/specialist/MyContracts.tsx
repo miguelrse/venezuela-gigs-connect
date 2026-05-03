@@ -34,6 +34,8 @@ interface ContractWithDetails {
   } | null;
 }
 
+type ContractRow = Omit<ContractWithDetails, 'client'>;
+
 export default function MyContracts() {
   const { user } = useAuth();
   const [contracts, setContracts] = useState<ContractWithDetails[]>([]);
@@ -63,8 +65,9 @@ export default function MyContracts() {
     }
 
     if (data && data.length > 0) {
+      const typedContracts = data as unknown as ContractRow[];
       // Get unique client IDs
-      const clientIds = [...new Set(data.map((c: any) => c.client_id).filter(Boolean))];
+      const clientIds = [...new Set(typedContracts.map((c) => c.client_id).filter(Boolean))];
       
       // Fetch client profiles
       const { data: profiles } = await supabase
@@ -73,9 +76,9 @@ export default function MyContracts() {
         .in('user_id', clientIds);
 
       // Merge client info into contracts
-      const contractsWithClients = data.map((contract: any) => ({
+      const contractsWithClients = typedContracts.map((contract) => ({
         ...contract,
-        client: profiles?.find(p => p.user_id === contract.client_id) || { full_name: 'Cliente' }
+        client: profiles?.find(p => p.user_id === contract.client_id) || { user_id: contract.client_id, full_name: 'Cliente' }
       }));
 
       setContracts(contractsWithClients as ContractWithDetails[]);

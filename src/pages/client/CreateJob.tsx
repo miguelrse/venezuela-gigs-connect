@@ -9,10 +9,36 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
-import { ArrowLeft, Loader2, MapPin, Clock, Briefcase, DollarSign, FileText, Calendar } from 'lucide-react';
+import { ArrowLeft, Loader2, MapPin, Clock, Briefcase, DollarSign, FileText, Calendar, Sparkles, ShieldCheck } from 'lucide-react';
+import type { JobType, JobUrgency } from '@/types/database';
+
+const jobTemplates = [
+  {
+    title: 'Reparación o instalación en el hogar',
+    categoryHint: 'Reparaciones',
+    description: 'Necesito ayuda con una reparación/instalación en casa.\n\nDetalles:\n- Tipo de problema:\n- Medidas/modelo/fotos si aplica:\n- Disponibilidad para recibir al especialista:\n- Algo importante que deba saber antes de cotizar:',
+    job_type: 'presencial' as JobType,
+    urgency: 'asap' as JobUrgency,
+  },
+  {
+    title: 'Servicio profesional remoto',
+    categoryHint: 'Tecnología / Diseño / Asesoría',
+    description: 'Busco un especialista para un trabajo remoto.\n\nObjetivo:\n- Resultado esperado:\n- Fecha ideal de entrega:\n- Referencias o ejemplos:\n- Presupuesto aproximado:',
+    job_type: 'remoto' as JobType,
+    urgency: 'flexible' as JobUrgency,
+  },
+  {
+    title: 'Servicio para evento o fecha específica',
+    categoryHint: 'Eventos / Belleza / Fotografía',
+    description: 'Necesito un servicio para una fecha específica.\n\nFecha y hora:\nUbicación:\nCantidad de personas / alcance:\nQué incluye idealmente:\nRequisitos importantes:',
+    job_type: 'presencial' as JobType,
+    urgency: 'fecha_especifica' as JobUrgency,
+  },
+];
 
 export default function CreateJob() {
   const navigate = useNavigate();
@@ -26,8 +52,8 @@ export default function CreateJob() {
     location: '',
     budget_min: null as number | null,
     budget_max: null as number | null,
-    job_type: 'presencial' as 'presencial' | 'remoto' | 'hibrido',
-    urgency: 'flexible' as 'asap' | 'flexible' | 'fecha_especifica',
+    job_type: 'presencial' as JobType,
+    urgency: 'flexible' as JobUrgency,
     urgency_date: '',
   });
 
@@ -49,6 +75,26 @@ export default function CreateJob() {
       return;
     }
 
+    if (!formData.description.trim() || formData.description.trim().length < 40) {
+      toast.error('Agrega una descripción con al menos 40 caracteres para recibir mejores ofertas');
+      return;
+    }
+
+    if (formData.job_type !== 'remoto' && !formData.location.trim()) {
+      toast.error('Agrega una ubicación para trabajos presenciales o híbridos');
+      return;
+    }
+
+    if (formData.urgency === 'fecha_especifica' && !formData.urgency_date) {
+      toast.error('Selecciona la fecha del servicio');
+      return;
+    }
+
+    if (formData.budget_min !== null && formData.budget_max !== null && formData.budget_min > formData.budget_max) {
+      toast.error('El presupuesto mínimo no puede ser mayor que el máximo');
+      return;
+    }
+
     setIsSubmitting(true);
 
     const { data, error } = await supabase
@@ -65,7 +111,7 @@ export default function CreateJob() {
         urgency: formData.urgency,
         urgency_date: formData.urgency === 'fecha_especifica' && formData.urgency_date ? formData.urgency_date : null,
         status: 'open',
-      } as any)
+      })
       .select()
       .single();
 
@@ -104,6 +150,35 @@ export default function CreateJob() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <Alert className="mb-6 border-primary/20 bg-primary/5">
+              <ShieldCheck className="h-4 w-4 text-primary" />
+              <AlertTitle>Mientras mejor sea la solicitud, mejores propuestas recibes</AlertTitle>
+              <AlertDescription>
+                Incluye contexto, ubicación, fecha, presupuesto y qué resultado esperas. Esto filtra curiosos y ayuda a comparar especialistas de verdad.
+              </AlertDescription>
+            </Alert>
+
+            <div className="mb-6 grid gap-3 md:grid-cols-3">
+              {jobTemplates.map((template) => (
+                <button
+                  key={template.title}
+                  type="button"
+                  onClick={() => setFormData({
+                    ...formData,
+                    title: template.title,
+                    description: template.description,
+                    job_type: template.job_type,
+                    urgency: template.urgency,
+                  })}
+                  className="rounded-xl border bg-card p-4 text-left transition hover:border-primary/40 hover:shadow-md"
+                >
+                  <Sparkles className="mb-3 h-5 w-5 text-primary" />
+                  <p className="font-semibold leading-tight">{template.title}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Guía para {template.categoryHint}</p>
+                </button>
+              ))}
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Title */}
               <div className="space-y-2">
@@ -155,7 +230,7 @@ export default function CreateJob() {
                 </Label>
                 <RadioGroup
                   value={formData.job_type}
-                  onValueChange={(v) => setFormData({ ...formData, job_type: v as any })}
+                  onValueChange={(v) => setFormData({ ...formData, job_type: v as JobType })}
                   className="flex flex-wrap gap-3"
                 >
                   <label className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border cursor-pointer transition-colors ${formData.job_type === 'presencial' ? 'border-primary bg-primary/5' : 'hover:border-muted-foreground/30'}`}>
@@ -197,7 +272,7 @@ export default function CreateJob() {
                 </Label>
                 <RadioGroup
                   value={formData.urgency}
-                  onValueChange={(v) => setFormData({ ...formData, urgency: v as any })}
+                  onValueChange={(v) => setFormData({ ...formData, urgency: v as JobUrgency })}
                   className="flex flex-wrap gap-3"
                 >
                   <label className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border cursor-pointer transition-colors ${formData.urgency === 'asap' ? 'border-primary bg-primary/5' : 'hover:border-muted-foreground/30'}`}>

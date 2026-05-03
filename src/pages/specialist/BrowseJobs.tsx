@@ -9,15 +9,15 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MapPin, DollarSign, Calendar, ArrowLeft, Search, Filter, Clock, Zap, Wifi, Building } from 'lucide-react';
-import type { Job } from '@/types/database';
+import { MapPin, DollarSign, ArrowLeft, Search, Filter, Clock, Zap, Wifi, Building, SlidersHorizontal, Target } from 'lucide-react';
+import type { Job, JobType, JobUrgency } from '@/types/database';
 
 export default function BrowseJobs() {
   const { data: categories } = useCategories();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'recent' | 'budget'>('recent');
+  const [sortBy, setSortBy] = useState<'recent' | 'budget' | 'urgent'>('recent');
   const [filters, setFilters] = useState({
     category: '',
     location: '',
@@ -44,24 +44,39 @@ export default function BrowseJobs() {
 
   const filteredJobs = jobs
     .filter((job) => {
-      if (filters.category && (job.category as any)?.name !== filters.category) return false;
+      if (filters.category && job.category?.name !== filters.category) return false;
       if (filters.location && !job.location?.toLowerCase().includes(filters.location.toLowerCase())) return false;
-      if (filters.job_type && (job as any).job_type !== filters.job_type) return false;
+      if (filters.job_type && job.job_type !== filters.job_type) return false;
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         const matchTitle = job.title.toLowerCase().includes(q);
         const matchDesc = job.description?.toLowerCase().includes(q);
-        const matchCat = (job.category as any)?.name?.toLowerCase().includes(q);
+        const matchCat = job.category?.name?.toLowerCase().includes(q);
         if (!matchTitle && !matchDesc && !matchCat) return false;
       }
       return true;
     })
     .sort((a, b) => {
+      if (sortBy === 'urgent') {
+        const urgencyScore = (job: Job) => job.urgency === 'asap' ? 1 : 0;
+        return urgencyScore(b) - urgencyScore(a) || new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
       if (sortBy === 'budget') {
         return (b.budget_max || b.budget_min || 0) - (a.budget_max || a.budget_min || 0);
       }
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
+
+  const urgentCount = jobs.filter((job) => job.urgency === 'asap').length;
+  const remoteCount = jobs.filter((job) => job.job_type === 'remoto').length;
+  const withBudgetCount = jobs.filter((job) => job.budget_min || job.budget_max).length;
+  const hasActiveFilters = Boolean(searchQuery || filters.category || filters.location || filters.job_type);
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setFilters({ category: '', location: '', job_type: '' });
+    setSortBy('recent');
+  };
 
   const timeAgo = (date: string) => {
     const now = new Date();
@@ -83,7 +98,7 @@ export default function BrowseJobs() {
     return `Hasta $${max}`;
   };
 
-  const getJobTypeIcon = (type: string) => {
+  const getJobTypeIcon = (type: JobType) => {
     switch (type) {
       case 'remoto': return <Wifi className="h-3 w-3" />;
       case 'hibrido': return <Building className="h-3 w-3" />;
@@ -91,7 +106,7 @@ export default function BrowseJobs() {
     }
   };
 
-  const getJobTypeLabel = (type: string) => {
+  const getJobTypeLabel = (type: JobType) => {
     switch (type) {
       case 'remoto': return 'Remoto';
       case 'hibrido': return 'Híbrido';
@@ -99,7 +114,7 @@ export default function BrowseJobs() {
     }
   };
 
-  const getUrgencyBadge = (urgency: string) => {
+  const getUrgencyBadge = (urgency: JobUrgency) => {
     if (urgency === 'asap') return <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Urgente</Badge>;
     return null;
   };
@@ -110,7 +125,7 @@ export default function BrowseJobs() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
             <h1 className="text-3xl font-display font-bold">Trabajos Disponibles</h1>
-            <p className="text-muted-foreground">{filteredJobs.length} trabajos encontrados</p>
+            <p className="text-muted-foreground">{filteredJobs.length} trabajos encontrados de {jobs.length} abiertos</p>
           </div>
           <Button variant="outline" asChild>
             <Link to="/specialist">
@@ -118,6 +133,27 @@ export default function BrowseJobs() {
               Volver al panel
             </Link>
           </Button>
+        </div>
+
+        <div className="grid gap-3 mb-6 md:grid-cols-3">
+          <Card>
+            <CardContent className="flex items-center gap-3 p-4">
+              <div className="rounded-xl bg-destructive/10 p-3 text-destructive"><Zap className="h-5 w-5" /></div>
+              <div><p className="text-2xl font-bold">{urgentCount}</p><p className="text-sm text-muted-foreground">urgentes</p></div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="flex items-center gap-3 p-4">
+              <div className="rounded-xl bg-info/10 p-3 text-info"><Wifi className="h-5 w-5" /></div>
+              <div><p className="text-2xl font-bold">{remoteCount}</p><p className="text-sm text-muted-foreground">remotos</p></div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="flex items-center gap-3 p-4">
+              <div className="rounded-xl bg-primary/10 p-3 text-primary"><Target className="h-5 w-5" /></div>
+              <div><p className="text-2xl font-bold">{withBudgetCount}</p><p className="text-sm text-muted-foreground">con presupuesto</p></div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Search and Filters */}
@@ -169,6 +205,12 @@ export default function BrowseJobs() {
                   onChange={(e) => setFilters({ ...filters, location: e.target.value })}
                   className="w-full sm:w-[200px]"
                 />
+                {hasActiveFilters && (
+                  <Button type="button" variant="ghost" onClick={clearFilters} className="sm:ml-auto">
+                    <SlidersHorizontal className="mr-2 h-4 w-4" />
+                    Limpiar filtros
+                  </Button>
+                )}
               </div>
             </div>
           </CardContent>
@@ -176,9 +218,10 @@ export default function BrowseJobs() {
 
         {/* Sort Tabs */}
         <div className="mb-4">
-          <Tabs value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
+          <Tabs value={sortBy} onValueChange={(v) => setSortBy(v as 'recent' | 'budget' | 'urgent')}>
             <TabsList>
               <TabsTrigger value="recent">Más Recientes</TabsTrigger>
+              <TabsTrigger value="urgent">Urgentes</TabsTrigger>
               <TabsTrigger value="budget">Mayor Presupuesto</TabsTrigger>
             </TabsList>
           </Tabs>
@@ -190,7 +233,10 @@ export default function BrowseJobs() {
         ) : filteredJobs.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground">No hay trabajos disponibles con los filtros seleccionados</p>
+              <Search className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
+              <h3 className="font-semibold">No encontramos trabajos con esos filtros</h3>
+              <p className="mt-1 text-muted-foreground">Prueba una categoría más amplia, otra ciudad o limpia los filtros.</p>
+              {hasActiveFilters && <Button className="mt-4" variant="outline" onClick={clearFilters}>Limpiar filtros</Button>}
             </CardContent>
           </Card>
         ) : (
@@ -203,13 +249,13 @@ export default function BrowseJobs() {
                       {/* Top row: badges */}
                       <div className="flex items-center gap-2 flex-wrap">
                         <Badge variant="secondary" className="text-xs">
-                          {(job.category as any)?.name || 'General'}
+                          {job.category?.name || 'General'}
                         </Badge>
                         <Badge variant="outline" className="text-xs flex items-center gap-1">
-                          {getJobTypeIcon((job as any).job_type || 'presencial')}
-                          {getJobTypeLabel((job as any).job_type || 'presencial')}
+                          {getJobTypeIcon(job.job_type || 'presencial')}
+                          {getJobTypeLabel(job.job_type || 'presencial')}
                         </Badge>
-                        {getUrgencyBadge((job as any).urgency || 'flexible')}
+                        {getUrgencyBadge(job.urgency || 'flexible')}
                         <span className="text-xs text-muted-foreground ml-auto flex items-center gap-1">
                           <Clock className="h-3 w-3" />
                           {timeAgo(job.created_at)}

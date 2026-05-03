@@ -50,10 +50,11 @@ export default function Auth() {
         if (error) throw error;
         toast({ title: '¡Cuenta creada!', description: 'Tu cuenta ha sido creada exitosamente.' });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Ha ocurrido un error. Intenta de nuevo.';
       toast({
         title: 'Error',
-        description: error.message || 'Ha ocurrido un error. Intenta de nuevo.',
+        description: message,
         variant: 'destructive',
       });
     } finally {
@@ -67,7 +68,7 @@ export default function Auth() {
         <CardHeader className="text-center">
           <Link to="/" className="inline-flex items-center justify-center gap-2 mb-4">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-primary">
-              <span className="text-xl font-bold text-primary-foreground">S</span>
+              <span className="text-xl font-bold text-primary-foreground">C</span>
             </div>
           </Link>
           <CardTitle className="text-2xl font-display">
@@ -76,7 +77,7 @@ export default function Auth() {
           <CardDescription>
             {isLogin
               ? 'Ingresa tus credenciales para continuar'
-              : 'Regístrate para empezar a usar Servicio'}
+              : 'Regístrate para empezar a usar ChambaLink'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -94,7 +95,7 @@ export default function Auth() {
                   />
                 </div>
                 <div className="space-y-3">
-                  <Label>¿Cómo usarás Servicio?</Label>
+                  <Label>¿Cómo usarás ChambaLink?</Label>
                   <RadioGroup value={selectedRole} onValueChange={(v) => setSelectedRole(v as AppRole)}>
                     <div className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer">
                       <RadioGroupItem value="client" id="client" />

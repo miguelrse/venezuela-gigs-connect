@@ -4,6 +4,10 @@ export type AppRole = 'client' | 'specialist' | 'admin';
 
 export type JobStatus = 'draft' | 'open' | 'assigned' | 'in_progress' | 'completed_pending_client' | 'completed' | 'canceled';
 
+export type JobType = 'presencial' | 'remoto' | 'hibrido';
+
+export type JobUrgency = 'asap' | 'flexible' | 'fecha_especifica';
+
 export type BidStatus = 'submitted' | 'withdrawn' | 'accepted' | 'rejected';
 
 export type ContractStatus = 'active' | 'in_progress' | 'completed_pending_client' | 'completed' | 'canceled';
@@ -47,6 +51,9 @@ export interface Job {
   location: string | null;
   budget_min: number | null;
   budget_max: number | null;
+  job_type: JobType | null;
+  urgency: JobUrgency | null;
+  urgency_date: string | null;
   status: JobStatus;
   created_at: string;
   updated_at: string;
@@ -157,6 +164,9 @@ export interface JobFormData {
   location: string;
   budget_min: number | null;
   budget_max: number | null;
+  job_type: JobType;
+  urgency: JobUrgency;
+  urgency_date: string;
 }
 
 export interface BidFormData {
