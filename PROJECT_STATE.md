@@ -88,3 +88,11 @@ Study real gig/service marketplaces and adapt useful patterns proactively. Relev
 3. Add public category/city landing pages or public marketplace preview.
 4. Continue dashboard depth with richer conversion metrics/charts now that headline counts use real aggregate queries.
 5. Decide whether to keep the working brand `ChambaLink` or rename before visual polish.
+
+## Location/radius marketplace update
+Added location intelligence for local services:
+- Clients can share exact browser location when creating presencial/híbrido jobs.
+- Jobs now support latitude, longitude, and location accuracy fields via Supabase migration.
+- Specialists can activate their location and filter open jobs within a selected 1–50 km radius.
+- Added reusable visual map component and distance labels in Browse Jobs.
+- Verified `npm run build` passes and `npm run lint` stays at 0 errors / 21 existing warnings.

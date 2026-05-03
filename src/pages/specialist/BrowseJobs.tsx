@@ -9,7 +9,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MapPin, DollarSign, ArrowLeft, Search, Filter, Clock, Zap, Wifi, Building, SlidersHorizontal, Target } from 'lucide-react';
+import { MapPin, DollarSign, ArrowLeft, Search, Filter, Clock, Zap, Wifi, Building, SlidersHorizontal, Target, Navigation, Radius } from 'lucide-react';
+import { LocationMap } from '@/components/ui/location-map';
+import { formatDistanceKm, getCurrentCoordinates, haversineDistanceKm, type Coordinates } from '@/lib/geo';
 import type { Job, JobType, JobUrgency } from '@/types/database';
 
 export default function BrowseJobs() {
@@ -17,6 +19,8 @@ export default function BrowseJobs() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
+  const [radiusKm, setRadiusKm] = useState(10);
   const [sortBy, setSortBy] = useState<'recent' | 'budget' | 'urgent'>('recent');
   const [filters, setFilters] = useState({
     category: '',
@@ -47,6 +51,11 @@ export default function BrowseJobs() {
       if (filters.category && job.category?.name !== filters.category) return false;
       if (filters.location && !job.location?.toLowerCase().includes(filters.location.toLowerCase())) return false;
       if (filters.job_type && job.job_type !== filters.job_type) return false;
+      if (userLocation && job.job_type !== 'remoto') {
+        if (typeof job.latitude !== 'number' || typeof job.longitude !== 'number') return false;
+        const distance = haversineDistanceKm(userLocation, { latitude: job.latitude, longitude: job.longitude });
+        if (distance > radiusKm) return false;
+      }
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         const matchTitle = job.title.toLowerCase().includes(q);
@@ -70,12 +79,29 @@ export default function BrowseJobs() {
   const urgentCount = jobs.filter((job) => job.urgency === 'asap').length;
   const remoteCount = jobs.filter((job) => job.job_type === 'remoto').length;
   const withBudgetCount = jobs.filter((job) => job.budget_min || job.budget_max).length;
-  const hasActiveFilters = Boolean(searchQuery || filters.category || filters.location || filters.job_type);
+  const geolocatedCount = jobs.filter((job) => typeof job.latitude === 'number' && typeof job.longitude === 'number').length;
+  const hasActiveFilters = Boolean(searchQuery || filters.category || filters.location || filters.job_type || userLocation);
 
   const clearFilters = () => {
     setSearchQuery('');
     setFilters({ category: '', location: '', job_type: '' });
+    setUserLocation(null);
+    setRadiusKm(10);
     setSortBy('recent');
+  };
+
+  const handleUseCurrentLocation = async () => {
+    try {
+      const position = await getCurrentCoordinates();
+      setUserLocation({ latitude: position.coords.latitude, longitude: position.coords.longitude });
+    } catch (error) {
+      console.error('Error getting specialist location:', error);
+    }
+  };
+
+  const getJobDistance = (job: Job) => {
+    if (!userLocation || typeof job.latitude !== 'number' || typeof job.longitude !== 'number') return null;
+    return haversineDistanceKm(userLocation, { latitude: job.latitude, longitude: job.longitude });
   };
 
   const timeAgo = (date: string) => {
@@ -135,7 +161,7 @@ export default function BrowseJobs() {
           </Button>
         </div>
 
-        <div className="grid gap-3 mb-6 md:grid-cols-3">
+        <div className="grid gap-3 mb-6 md:grid-cols-4">
           <Card>
             <CardContent className="flex items-center gap-3 p-4">
               <div className="rounded-xl bg-destructive/10 p-3 text-destructive"><Zap className="h-5 w-5" /></div>
@@ -152,6 +178,12 @@ export default function BrowseJobs() {
             <CardContent className="flex items-center gap-3 p-4">
               <div className="rounded-xl bg-primary/10 p-3 text-primary"><Target className="h-5 w-5" /></div>
               <div><p className="text-2xl font-bold">{withBudgetCount}</p><p className="text-sm text-muted-foreground">con presupuesto</p></div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="flex items-center gap-3 p-4">
+              <div className="rounded-xl bg-emerald-500/10 p-3 text-emerald-600"><MapPin className="h-5 w-5" /></div>
+              <div><p className="text-2xl font-bold">{geolocatedCount}</p><p className="text-sm text-muted-foreground">con mapa</p></div>
             </CardContent>
           </Card>
         </div>
@@ -210,6 +242,42 @@ export default function BrowseJobs() {
                     <SlidersHorizontal className="mr-2 h-4 w-4" />
                     Limpiar filtros
                   </Button>
+                )}
+              </div>
+              <div className="rounded-2xl border bg-secondary/40 p-4">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
+                  <div className="flex-1">
+                    <div className="mb-2 flex items-center gap-2 font-medium">
+                      <Radius className="h-4 w-4 text-primary" />
+                      Buscar trabajos cerca de mí
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Activa tu ubicación para ver solo solicitudes presenciales o híbridas dentro del radio seleccionado.
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <label className="text-sm text-muted-foreground">
+                      Radio: <span className="font-semibold text-foreground">{radiusKm} km</span>
+                    </label>
+                    <Input
+                      type="range"
+                      min="1"
+                      max="50"
+                      step="1"
+                      value={radiusKm}
+                      onChange={(e) => setRadiusKm(Number(e.target.value))}
+                      className="w-full sm:w-40"
+                    />
+                    <Button type="button" variant={userLocation ? 'default' : 'outline'} onClick={handleUseCurrentLocation}>
+                      <Navigation className="mr-2 h-4 w-4" />
+                      {userLocation ? 'Actualizar ubicación' : 'Usar mi ubicación'}
+                    </Button>
+                  </div>
+                </div>
+                {userLocation && (
+                  <div className="mt-4">
+                    <LocationMap latitude={userLocation.latitude} longitude={userLocation.longitude} radiusKm={radiusKm} label="Tu zona de búsqueda" />
+                  </div>
                 )}
               </div>
             </div>
@@ -284,6 +352,12 @@ export default function BrowseJobs() {
                           <span className="flex items-center gap-1 font-semibold text-foreground">
                             <DollarSign className="h-4 w-4 text-primary" />
                             {formatBudget(job.budget_min, job.budget_max)}
+                          </span>
+                        )}
+                        {getJobDistance(job) !== null && (
+                          <span className="flex items-center gap-1 font-semibold text-primary">
+                            <Navigation className="h-4 w-4" />
+                            A {formatDistanceKm(getJobDistance(job)!)}
                           </span>
                         )}
                       </div>

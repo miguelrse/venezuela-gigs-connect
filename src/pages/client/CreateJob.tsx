@@ -13,7 +13,9 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
-import { ArrowLeft, Loader2, MapPin, Clock, Briefcase, DollarSign, FileText, Calendar, Sparkles, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Loader2, MapPin, Clock, Briefcase, DollarSign, FileText, Sparkles, ShieldCheck, Navigation } from 'lucide-react';
+import { LocationMap } from '@/components/ui/location-map';
+import { getCurrentCoordinates } from '@/lib/geo';
 import type { JobType, JobUrgency } from '@/types/database';
 
 const jobTemplates = [
@@ -50,12 +52,33 @@ export default function CreateJob() {
     description: '',
     category_id: '',
     location: '',
+    latitude: null as number | null,
+    longitude: null as number | null,
+    location_accuracy_m: null as number | null,
     budget_min: null as number | null,
     budget_max: null as number | null,
     job_type: 'presencial' as JobType,
     urgency: 'flexible' as JobUrgency,
     urgency_date: '',
   });
+
+
+  const handleUseCurrentLocation = async () => {
+    try {
+      const position = await getCurrentCoordinates();
+      setFormData((current) => ({
+        ...current,
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        location_accuracy_m: position.coords.accuracy,
+        location: current.location || 'Ubicación actual compartida',
+      }));
+      toast.success('Ubicación exacta agregada al trabajo');
+    } catch (error) {
+      console.error('Error getting location:', error);
+      toast.error('No pude obtener tu ubicación. Revisa permisos del navegador o escribe la zona manualmente.');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,6 +128,9 @@ export default function CreateJob() {
         description: formData.description.trim() || null,
         category_id: formData.category_id || null,
         location: formData.location.trim() || null,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
+        location_accuracy_m: formData.location_accuracy_m,
         budget_min: formData.budget_min,
         budget_max: formData.budget_max,
         job_type: formData.job_type,
@@ -250,17 +276,33 @@ export default function CreateJob() {
 
               {/* Location */}
               {formData.job_type !== 'remoto' && (
-                <div className="space-y-2">
-                  <Label htmlFor="location" className="flex items-center gap-1.5">
-                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                    Ubicación
-                  </Label>
-                  <Input
-                    id="location"
-                    placeholder="Ej: Caracas, Los Palos Grandes"
-                    value={formData.location}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                <div className="space-y-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                    <div className="flex-1 space-y-2">
+                      <Label htmlFor="location" className="flex items-center gap-1.5">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        Ubicación del servicio
+                      </Label>
+                      <Input
+                        id="location"
+                        placeholder="Ej: Caracas, Los Palos Grandes"
+                        value={formData.location}
+                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                      />
+                    </div>
+                    <Button type="button" variant="outline" onClick={handleUseCurrentLocation} className="shrink-0">
+                      <Navigation className="mr-2 h-4 w-4" />
+                      Usar mi ubicación exacta
+                    </Button>
+                  </div>
+                  <LocationMap
+                    latitude={formData.latitude}
+                    longitude={formData.longitude}
+                    label="Ubicación exacta del cliente"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    La ubicación exacta ayuda a que los especialistas cercanos filtren trabajos por radio. Si prefieres, puedes escribir solo la zona aproximada.
+                  </p>
                 </div>
               )}
 

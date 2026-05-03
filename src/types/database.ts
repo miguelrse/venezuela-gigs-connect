@@ -49,6 +49,9 @@ export interface Job {
   title: string;
   description: string | null;
   location: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  location_accuracy_m: number | null;
   budget_min: number | null;
   budget_max: number | null;
   job_type: JobType | null;
@@ -162,6 +165,9 @@ export interface JobFormData {
   description: string;
   category_id: string;
   location: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  location_accuracy_m?: number | null;
   budget_min: number | null;
   budget_max: number | null;
   job_type: JobType;

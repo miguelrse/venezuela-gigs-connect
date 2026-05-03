@@ -269,3 +269,11 @@ Edited `src/pages/client/Dashboard.tsx` and `src/pages/specialist/Dashboard.tsx`
 - Verified `npm run build` passes.
 - Verified `npm run lint` exits successfully with 0 errors and 21 existing warnings.
 
+
+## Location/radius marketplace update
+Added location intelligence for local services:
+- Clients can share exact browser location when creating presencial/híbrido jobs.
+- Jobs now support latitude, longitude, and location accuracy fields via Supabase migration.
+- Specialists can activate their location and filter open jobs within a selected 1–50 km radius.
+- Added reusable visual map component and distance labels in Browse Jobs.
+- Verified `npm run build` passes and `npm run lint` stays at 0 errors / 21 existing warnings.
