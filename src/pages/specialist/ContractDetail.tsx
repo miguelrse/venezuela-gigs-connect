@@ -19,7 +19,8 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { ArrowLeft, MapPin, DollarSign, Calendar, User, Loader2, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { ArrowLeft, MapPin, DollarSign, Calendar, User, Loader2, CheckCircle, Clock, AlertCircle, XCircle, Star } from 'lucide-react';
+import { ReviewDialog } from '@/components/contracts/ReviewDialog';
 import type { ContractStatus } from '@/types/database';
 
 interface ContractWithDetails {
@@ -61,12 +62,40 @@ export default function ContractDetail() {
   const [contract, setContract] = useState<ContractWithDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [hasReviewed, setHasReviewed] = useState(false);
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
 
   useEffect(() => {
     if (id && user) {
       fetchContract();
+      checkExistingReview();
     }
   }, [id, user]);
+
+  const checkExistingReview = async () => {
+    const { data } = await supabase
+      .from('reviews')
+      .select('id')
+      .eq('contract_id', id!)
+      .eq('reviewer_id', user!.id)
+      .maybeSingle();
+    setHasReviewed(!!data);
+  };
+
+  const cancelContract = async () => {
+    if (!contract) return;
+    setIsUpdating(true);
+    const { error } = await supabase.rpc('cancel_contract', { _contract_id: contract.id });
+    if (error) {
+      console.error('cancel_contract failed:', error);
+      toast.error('No se pudo cancelar el contrato');
+      setIsUpdating(false);
+      return;
+    }
+    toast.success('Contrato cancelado');
+    setIsUpdating(false);
+    fetchContract();
+  };
 
   const fetchContract = async () => {
     const { data, error } = await supabase
@@ -164,6 +193,7 @@ export default function ContractDetail() {
   const canMarkComplete = contract.status === 'in_progress';
   const isPendingClient = contract.status === 'completed_pending_client';
   const isCompleted = contract.status === 'completed';
+  const canCancel = contract.status === 'active' || contract.status === 'in_progress';
 
   return (
     <MainLayout>
@@ -197,13 +227,21 @@ export default function ContractDetail() {
         {isCompleted && (
           <Card className="mb-6 border-green-500/50 bg-green-500/10">
             <CardContent className="py-4">
-              <div className="flex items-center gap-3">
-                <CheckCircle className="h-5 w-5 text-green-500" />
-                <div>
+              <div className="flex items-start gap-3">
+                <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
+                <div className="flex-1">
                   <p className="font-medium">¡Trabajo completado!</p>
-                  <p className="text-sm text-muted-foreground">
-                    El cliente ha confirmado la finalización del trabajo
+                  <p className="text-sm text-muted-foreground mb-3">
+                    {hasReviewed
+                      ? 'Ya calificaste a este cliente'
+                      : '¿Cómo fue tu experiencia? Deja una reseña para el cliente'}
                   </p>
+                  {!hasReviewed && (
+                    <Button variant="outline" onClick={() => setIsReviewOpen(true)}>
+                      <Star className="mr-2 h-4 w-4" />
+                      Calificar al cliente
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -352,6 +390,54 @@ export default function ContractDetail() {
               )}
             </CardContent>
           </Card>
+        )}
+
+        {canCancel && (
+          <Card className="mt-6 border-destructive/40">
+            <CardHeader>
+              <CardTitle className="text-lg">Cancelar contrato</CardTitle>
+              <CardDescription>
+                Solo cancela si no vas a poder ejecutar el trabajo o hubo un acuerdo mutuo con el cliente.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" disabled={isUpdating}>
+                    {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
+                    Cancelar contrato
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>¿Cancelar este contrato?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      El cliente será notificado y el trabajo quedará cancelado. Esta acción no se puede deshacer.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Volver</AlertDialogCancel>
+                    <AlertDialogAction onClick={cancelContract}>Sí, cancelar</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </CardContent>
+          </Card>
+        )}
+
+        {contract && (
+          <ReviewDialog
+            open={isReviewOpen}
+            onOpenChange={setIsReviewOpen}
+            contractId={contract.id}
+            reviewerId={user!.id}
+            revieweeId={contract.client.user_id}
+            revieweeName={contract.client.full_name}
+            onSuccess={() => {
+              setHasReviewed(true);
+              fetchContract();
+            }}
+          />
         )}
       </div>
     </MainLayout>

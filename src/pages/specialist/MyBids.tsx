@@ -7,7 +7,19 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, MapPin, Calendar, DollarSign, User, FileText } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
+import { ArrowLeft, MapPin, Calendar, DollarSign, User, FileText, XCircle } from 'lucide-react';
 import type { Bid, JobStatus } from '@/types/database';
 
 interface BidWithClient extends Omit<Bid, 'job'> {
@@ -64,6 +76,22 @@ export default function MyBids() {
   const acceptedBids = bids.filter(b => b.status === 'accepted');
   const archivedBids = bids.filter(b => b.status === 'rejected' || b.status === 'withdrawn' || (b.status === 'submitted' && b.job?.status !== 'open'));
 
+  const withdrawBid = async (bidId: string) => {
+    const { error } = await supabase
+      .from('bids')
+      .update({ status: 'withdrawn' })
+      .eq('id', bidId)
+      .eq('specialist_id', user!.id)
+      .eq('status', 'submitted');
+    if (error) {
+      console.error('withdraw bid failed:', error);
+      toast.error('No se pudo retirar la oferta');
+      return;
+    }
+    toast.success('Oferta retirada');
+    fetchBids();
+  };
+
   const renderBid = (bid: BidWithClient) => {
     const isAccepted = bid.status === 'accepted';
     const linkTo = isAccepted 
@@ -119,6 +147,30 @@ export default function MyBids() {
           <div className="mt-2 pt-2 border-t flex items-center gap-2 text-sm text-primary">
             <FileText className="h-4 w-4" />
             <span>Ver contratos para gestionar este trabajo</span>
+          </div>
+        )}
+        {bid.status === 'submitted' && bid.job?.status === 'open' && (
+          <div className="mt-3 pt-3 border-t" onClick={(e) => e.stopPropagation()}>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" onClick={(e) => e.preventDefault()}>
+                  <XCircle className="mr-2 h-3.5 w-3.5" />
+                  Retirar oferta
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Retirar esta oferta?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    El cliente ya no verá tu propuesta. Podrás volver a ofertar mientras el trabajo siga abierto.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Volver</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => withdrawBid(bid.id)}>Sí, retirar</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         )}
       </>

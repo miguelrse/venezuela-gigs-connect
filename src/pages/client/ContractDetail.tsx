@@ -19,7 +19,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { ArrowLeft, MapPin, DollarSign, Calendar, User, Loader2, CheckCircle, Clock, Star } from 'lucide-react';
+import { ArrowLeft, MapPin, DollarSign, Calendar, User, Loader2, CheckCircle, Clock, Star, XCircle } from 'lucide-react';
 import { ReviewDialog } from '@/components/contracts/ReviewDialog';
 import type { ContractStatus } from '@/types/database';
 
@@ -129,6 +129,21 @@ export default function ClientContractDetail() {
     }
 
     toast.success('¡Trabajo confirmado como completado!');
+    setIsUpdating(false);
+    fetchContract();
+  };
+
+  const cancelContract = async () => {
+    if (!contract) return;
+    setIsUpdating(true);
+    const { error } = await supabase.rpc('cancel_contract', { _contract_id: contract.id });
+    if (error) {
+      console.error('cancel_contract failed:', error);
+      toast.error('No se pudo cancelar el contrato');
+      setIsUpdating(false);
+      return;
+    }
+    toast.success('Contrato cancelado');
     setIsUpdating(false);
     fetchContract();
   };
@@ -336,6 +351,39 @@ export default function ClientContractDetail() {
             )}
           </CardContent>
         </Card>
+
+        {isActive && (
+          <Card className="mt-6 border-destructive/40">
+            <CardHeader>
+              <CardTitle className="text-lg">Cancelar contrato</CardTitle>
+              <CardDescription>
+                Solo cancela si el trabajo aún no comenzó o hubo un acuerdo mutuo. Esta acción no se puede revertir.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" disabled={isUpdating}>
+                    {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
+                    Cancelar contrato
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>¿Cancelar este contrato?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      El trabajo volverá a estar cancelado y el especialista será notificado. No podrás deshacer esta acción.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Volver</AlertDialogCancel>
+                    <AlertDialogAction onClick={cancelContract}>Sí, cancelar</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </CardContent>
+          </Card>
+        )}
         {/* Review Dialog */}
         {contract && (
           <ReviewDialog
