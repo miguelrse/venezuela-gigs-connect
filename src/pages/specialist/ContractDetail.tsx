@@ -104,22 +104,16 @@ export default function ContractDetail() {
     if (!contract) return;
     setIsUpdating(true);
 
-    const { error } = await supabase
-      .from('contracts')
-      .update({ status: 'in_progress' })
-      .eq('id', contract.id);
+    const { error } = await supabase.rpc('specialist_start_contract', {
+      _contract_id: contract.id,
+    });
 
     if (error) {
+      console.error('specialist_start_contract failed:', error);
       toast.error('Error al actualizar el estado');
       setIsUpdating(false);
       return;
     }
-
-    // Also update job status
-    await supabase
-      .from('jobs')
-      .update({ status: 'in_progress' })
-      .eq('id', contract.job.id);
 
     toast.success('Contrato marcado como "En progreso"');
     setIsUpdating(false);
@@ -130,22 +124,16 @@ export default function ContractDetail() {
     if (!contract) return;
     setIsUpdating(true);
 
-    const { error } = await supabase
-      .from('contracts')
-      .update({ status: 'completed_pending_client' })
-      .eq('id', contract.id);
+    const { error } = await supabase.rpc('specialist_mark_completed', {
+      _contract_id: contract.id,
+    });
 
     if (error) {
+      console.error('specialist_mark_completed failed:', error);
       toast.error('Error al actualizar el estado');
       setIsUpdating(false);
       return;
     }
-
-    // Also update job status
-    await supabase
-      .from('jobs')
-      .update({ status: 'completed_pending_client' })
-      .eq('id', contract.job.id);
 
     toast.success('Trabajo marcado como completado. Esperando confirmación del cliente.');
     setIsUpdating(false);
