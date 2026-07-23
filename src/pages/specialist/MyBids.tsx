@@ -76,6 +76,22 @@ export default function MyBids() {
   const acceptedBids = bids.filter(b => b.status === 'accepted');
   const archivedBids = bids.filter(b => b.status === 'rejected' || b.status === 'withdrawn' || (b.status === 'submitted' && b.job?.status !== 'open'));
 
+  const withdrawBid = async (bidId: string) => {
+    const { error } = await supabase
+      .from('bids')
+      .update({ status: 'withdrawn' })
+      .eq('id', bidId)
+      .eq('specialist_id', user!.id)
+      .eq('status', 'submitted');
+    if (error) {
+      console.error('withdraw bid failed:', error);
+      toast.error('No se pudo retirar la oferta');
+      return;
+    }
+    toast.success('Oferta retirada');
+    fetchBids();
+  };
+
   const renderBid = (bid: BidWithClient) => {
     const isAccepted = bid.status === 'accepted';
     const linkTo = isAccepted 
