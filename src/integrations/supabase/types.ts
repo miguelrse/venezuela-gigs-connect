@@ -56,6 +56,13 @@ export type Database = {
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "bids_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "open_jobs_feed"
+            referencedColumns: ["id"]
+          },
         ]
       }
       categories: {
@@ -128,6 +135,13 @@ export type Database = {
             referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "contracts_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: true
+            referencedRelation: "open_jobs_feed"
+            referencedColumns: ["id"]
+          },
         ]
       }
       job_images: {
@@ -155,6 +169,13 @@ export type Database = {
             columns: ["job_id"]
             isOneToOne: false
             referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_images_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "open_jobs_feed"
             referencedColumns: ["id"]
           },
         ]
@@ -438,7 +459,98 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      open_jobs_feed: {
+        Row: {
+          budget_max: number | null
+          budget_min: number | null
+          category_id: string | null
+          client_id: string | null
+          created_at: string | null
+          description: string | null
+          id: string | null
+          job_type: Database["public"]["Enums"]["job_type"] | null
+          location: string | null
+          status: Database["public"]["Enums"]["job_status"] | null
+          title: string | null
+          updated_at: string | null
+          urgency: Database["public"]["Enums"]["job_urgency"] | null
+          urgency_date: string | null
+        }
+        Insert: {
+          budget_max?: number | null
+          budget_min?: number | null
+          category_id?: string | null
+          client_id?: string | null
+          created_at?: string | null
+          description?: never
+          id?: string | null
+          job_type?: Database["public"]["Enums"]["job_type"] | null
+          location?: string | null
+          status?: Database["public"]["Enums"]["job_status"] | null
+          title?: string | null
+          updated_at?: string | null
+          urgency?: Database["public"]["Enums"]["job_urgency"] | null
+          urgency_date?: string | null
+        }
+        Update: {
+          budget_max?: number | null
+          budget_min?: number | null
+          category_id?: string | null
+          client_id?: string | null
+          created_at?: string | null
+          description?: never
+          id?: string | null
+          job_type?: Database["public"]["Enums"]["job_type"] | null
+          location?: string | null
+          status?: Database["public"]["Enums"]["job_status"] | null
+          title?: string | null
+          updated_at?: string | null
+          urgency?: Database["public"]["Enums"]["job_urgency"] | null
+          urgency_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobs_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      public_profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string | null
+          full_name: string | null
+          id: string | null
+          location: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id?: string | null
+          location?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id?: string | null
+          location?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       accept_bid: { Args: { _bid_id: string }; Returns: string }
@@ -458,6 +570,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      shares_contract: { Args: { _a: string; _b: string }; Returns: boolean }
       specialist_mark_completed: {
         Args: { _contract_id: string }
         Returns: undefined
