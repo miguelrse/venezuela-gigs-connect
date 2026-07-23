@@ -28,19 +28,26 @@ const queryClient = new QueryClient();
 
 function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) {
   const { user, role, isLoading } = useAuth();
-  
+
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center">Cargando...</div>;
   }
-  
+
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
-  
-  if (allowedRoles && role && !allowedRoles.includes(role)) {
-    return <Navigate to="/" replace />;
+
+  // If this route is role-gated, we must know the role before rendering.
+  if (allowedRoles) {
+    if (role === null) {
+      // Role still loading (or missing). Never render protected content prematurely.
+      return <div className="min-h-screen flex items-center justify-center">Cargando...</div>;
+    }
+    if (!allowedRoles.includes(role)) {
+      return <Navigate to="/" replace />;
+    }
   }
-  
+
   return <>{children}</>;
 }
 
