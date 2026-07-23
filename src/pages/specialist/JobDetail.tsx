@@ -93,7 +93,7 @@ export default function SpecialistJobDetail() {
     const [jobsRes, reviewsRes, otherJobsRes] = await Promise.all([
       supabase.from('jobs').select('id, status').eq('client_id', clientId),
       supabase.from('reviews').select('rating').eq('reviewee_id', clientId),
-      supabase.from('jobs').select('id, title').eq('client_id', clientId).eq('status', 'open').neq('id', currentJobId).limit(3),
+      (supabase as any).from('open_jobs_feed').select('id, title').eq('client_id', clientId).neq('id', currentJobId).limit(3),
     ]);
 
     const jobs = jobsRes.data || [];
