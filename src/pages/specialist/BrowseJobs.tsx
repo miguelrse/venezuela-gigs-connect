@@ -34,14 +34,20 @@ export default function BrowseJobs() {
 
   const fetchJobs = async () => {
     setIsLoading(true);
-    const { data, error } = await supabase
-      .from('jobs')
-      .select('*, category:categories(name, icon)')
-      .eq('status', 'open')
+    const { data } = await (supabase as any)
+      .from('open_jobs_feed')
+      .select('*')
       .order('created_at', { ascending: false });
 
-    if (data) {
-      setJobs(data as unknown as Job[]);
+    if (data && data.length > 0) {
+      const catIds = [...new Set(data.map((j: any) => j.category_id).filter(Boolean))];
+      const { data: cats } = catIds.length
+        ? await supabase.from('categories').select('id, name, icon').in('id', catIds as string[])
+        : { data: [] as any[] };
+      const catMap = new Map((cats || []).map((c: any) => [c.id, { name: c.name, icon: c.icon }]));
+      setJobs(data.map((j: any) => ({ ...j, category: j.category_id ? catMap.get(j.category_id) : undefined })) as unknown as Job[]);
+    } else {
+      setJobs([]);
     }
     setIsLoading(false);
   };

@@ -55,11 +55,10 @@ export default function SpecialistJobDetail() {
   }, [id, user]);
 
   const fetchJob = async () => {
-    const { data, error } = await supabase
-      .from('jobs')
+    const { data, error } = await (supabase as any)
+      .from('open_jobs_feed')
       .select('*')
       .eq('id', id)
-      .eq('status', 'open')
       .maybeSingle();
 
     if (error || !data) {
@@ -68,12 +67,12 @@ export default function SpecialistJobDetail() {
       return;
     }
 
-    // Fetch category, client, client stats, other jobs in parallel
+    // Fetch category and client (public info only) in parallel
     const [categoryRes, clientRes] = await Promise.all([
       data.category_id
         ? supabase.from('categories').select('name, icon').eq('id', data.category_id).maybeSingle()
         : Promise.resolve({ data: null }),
-      supabase.from('profiles').select('user_id, full_name, location, avatar_url, created_at').eq('user_id', data.client_id).maybeSingle()
+      (supabase as any).from('public_profiles').select('user_id, full_name, location, avatar_url, created_at').eq('user_id', data.client_id).maybeSingle()
     ]);
 
     setJob({
@@ -94,7 +93,7 @@ export default function SpecialistJobDetail() {
     const [jobsRes, reviewsRes, otherJobsRes] = await Promise.all([
       supabase.from('jobs').select('id, status').eq('client_id', clientId),
       supabase.from('reviews').select('rating').eq('reviewee_id', clientId),
-      supabase.from('jobs').select('id, title').eq('client_id', clientId).eq('status', 'open').neq('id', currentJobId).limit(3),
+      (supabase as any).from('open_jobs_feed').select('id, title').eq('client_id', clientId).neq('id', currentJobId).limit(3),
     ]);
 
     const jobs = jobsRes.data || [];
