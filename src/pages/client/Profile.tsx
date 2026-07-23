@@ -59,16 +59,16 @@ export default function ClientProfile() {
       if (reviewsData && reviewsData.length > 0) {
         // Fetch reviewer profiles
         const reviewerIds = [...new Set(reviewsData.map(r => r.reviewer_id))];
-        const { data: reviewerProfiles } = await supabase
-          .from('profiles')
+        const { data: reviewerProfiles } = await (supabase as any)
+          .from('public_profiles')
           .select('user_id, full_name, avatar_url')
           .in('user_id', reviewerIds);
 
-        const profileMap = new Map(reviewerProfiles?.map(p => [p.user_id, p]) || []);
+        const profileMap = new Map((reviewerProfiles || []).map((p: any) => [p.user_id, p]));
         setReviews(reviewsData.map(review => ({
           ...review,
-          reviewer: profileMap.get(review.reviewer_id) || undefined
-        })));
+          reviewer: (profileMap.get(review.reviewer_id) as any) || undefined
+        })) as any);
       }
 
       // Calculate stats - jobs posted
