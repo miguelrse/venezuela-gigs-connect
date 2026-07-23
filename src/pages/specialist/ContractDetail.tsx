@@ -391,6 +391,54 @@ export default function ContractDetail() {
             </CardContent>
           </Card>
         )}
+
+        {canCancel && (
+          <Card className="mt-6 border-destructive/40">
+            <CardHeader>
+              <CardTitle className="text-lg">Cancelar contrato</CardTitle>
+              <CardDescription>
+                Solo cancela si no vas a poder ejecutar el trabajo o hubo un acuerdo mutuo con el cliente.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" disabled={isUpdating}>
+                    {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <XCircle className="mr-2 h-4 w-4" />}
+                    Cancelar contrato
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>¿Cancelar este contrato?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      El cliente será notificado y el trabajo quedará cancelado. Esta acción no se puede deshacer.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Volver</AlertDialogCancel>
+                    <AlertDialogAction onClick={cancelContract}>Sí, cancelar</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </CardContent>
+          </Card>
+        )}
+
+        {contract && (
+          <ReviewDialog
+            open={isReviewOpen}
+            onOpenChange={setIsReviewOpen}
+            contractId={contract.id}
+            reviewerId={user!.id}
+            revieweeId={contract.client.user_id}
+            revieweeName={contract.client.full_name}
+            onSuccess={() => {
+              setHasReviewed(true);
+              fetchContract();
+            }}
+          />
+        )}
       </div>
     </MainLayout>
   );
