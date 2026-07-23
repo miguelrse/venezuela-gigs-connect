@@ -133,6 +133,21 @@ export default function ClientContractDetail() {
     fetchContract();
   };
 
+  const cancelContract = async () => {
+    if (!contract) return;
+    setIsUpdating(true);
+    const { error } = await supabase.rpc('cancel_contract', { _contract_id: contract.id });
+    if (error) {
+      console.error('cancel_contract failed:', error);
+      toast.error('No se pudo cancelar el contrato');
+      setIsUpdating(false);
+      return;
+    }
+    toast.success('Contrato cancelado');
+    setIsUpdating(false);
+    fetchContract();
+  };
+
   if (isLoading) {
     return (
       <MainLayout>
