@@ -117,22 +117,16 @@ export default function ClientContractDetail() {
     if (!contract) return;
     setIsUpdating(true);
 
-    const { error } = await supabase
-      .from('contracts')
-      .update({ status: 'completed' })
-      .eq('id', contract.id);
+    const { error } = await supabase.rpc('client_confirm_completed', {
+      _contract_id: contract.id,
+    });
 
     if (error) {
+      console.error('client_confirm_completed failed:', error);
       toast.error('Error al confirmar la finalización');
       setIsUpdating(false);
       return;
     }
-
-    // Also update job status
-    await supabase
-      .from('jobs')
-      .update({ status: 'completed' })
-      .eq('id', contract.job.id);
 
     toast.success('¡Trabajo confirmado como completado!');
     setIsUpdating(false);

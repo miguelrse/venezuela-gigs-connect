@@ -118,48 +118,15 @@ export default function JobDetail() {
 
     setAcceptingBidId(bid.id);
 
-    // Start transaction: update bid, create contract, update job status
-    const { error: bidError } = await supabase
-      .from('bids')
-      .update({ status: 'accepted' })
-      .eq('id', bid.id);
+    // Atomic RPC: accepts bid, rejects others, creates contract, updates job.
+    const { error } = await supabase.rpc('accept_bid', { _bid_id: bid.id });
 
-    if (bidError) {
+    if (error) {
+      console.error('accept_bid failed:', error);
       toast.error('Error al aceptar la oferta');
       setAcceptingBidId(null);
       return;
     }
-
-    // Reject other bids
-    await supabase
-      .from('bids')
-      .update({ status: 'rejected' })
-      .eq('job_id', job.id)
-      .neq('id', bid.id);
-
-    // Create contract
-    const { error: contractError } = await supabase
-      .from('contracts')
-      .insert({
-        job_id: job.id,
-        accepted_bid_id: bid.id,
-        client_id: user.id,
-        specialist_id: bid.specialist_id,
-        status: 'active',
-      });
-
-    if (contractError) {
-      console.error('Error creating contract:', contractError);
-      toast.error('Error al crear el contrato');
-      setAcceptingBidId(null);
-      return;
-    }
-
-    // Update job status
-    await supabase
-      .from('jobs')
-      .update({ status: 'assigned' })
-      .eq('id', job.id);
 
     toast.success('Oferta aceptada. Se ha creado un contrato.');
     setAcceptingBidId(null);

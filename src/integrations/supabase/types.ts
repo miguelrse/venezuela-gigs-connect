@@ -441,6 +441,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_bid: { Args: { _bid_id: string }; Returns: string }
+      cancel_contract: { Args: { _contract_id: string }; Returns: undefined }
+      client_confirm_completed: {
+        Args: { _contract_id: string }
+        Returns: undefined
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -451,6 +457,14 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      specialist_mark_completed: {
+        Args: { _contract_id: string }
+        Returns: undefined
+      }
+      specialist_start_contract: {
+        Args: { _contract_id: string }
+        Returns: undefined
       }
     }
     Enums: {
