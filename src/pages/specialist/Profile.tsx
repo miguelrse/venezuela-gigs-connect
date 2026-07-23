@@ -104,8 +104,8 @@ export default function SpecialistProfile() {
       if (reviewsData && reviewsData.length > 0) {
         // Fetch reviewer profiles
         const reviewerIds = [...new Set(reviewsData.map(r => r.reviewer_id))];
-        const { data: reviewerProfiles } = await supabase
-          .from('profiles')
+        const { data: reviewerProfiles } = await (supabase as any)
+          .from('public_profiles')
           .select('user_id, full_name, avatar_url')
           .in('user_id', reviewerIds);
 
