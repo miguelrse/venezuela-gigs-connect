@@ -75,7 +75,7 @@ export function ReviewDialog({
         <DialogHeader>
           <DialogTitle>Calificar a {revieweeName}</DialogTitle>
           <DialogDescription>
-            ¿Cómo fue tu experiencia con este especialista?
+            ¿Cómo fue tu experiencia trabajando con esta persona?
           </DialogDescription>
         </DialogHeader>
 
