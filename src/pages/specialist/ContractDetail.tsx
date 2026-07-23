@@ -227,13 +227,21 @@ export default function ContractDetail() {
         {isCompleted && (
           <Card className="mb-6 border-green-500/50 bg-green-500/10">
             <CardContent className="py-4">
-              <div className="flex items-center gap-3">
-                <CheckCircle className="h-5 w-5 text-green-500" />
-                <div>
+              <div className="flex items-start gap-3">
+                <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
+                <div className="flex-1">
                   <p className="font-medium">¡Trabajo completado!</p>
-                  <p className="text-sm text-muted-foreground">
-                    El cliente ha confirmado la finalización del trabajo
+                  <p className="text-sm text-muted-foreground mb-3">
+                    {hasReviewed
+                      ? 'Ya calificaste a este cliente'
+                      : '¿Cómo fue tu experiencia? Deja una reseña para el cliente'}
                   </p>
+                  {!hasReviewed && (
+                    <Button variant="outline" onClick={() => setIsReviewOpen(true)}>
+                      <Star className="mr-2 h-4 w-4" />
+                      Calificar al cliente
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>
