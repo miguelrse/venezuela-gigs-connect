@@ -193,6 +193,7 @@ export default function ContractDetail() {
   const canMarkComplete = contract.status === 'in_progress';
   const isPendingClient = contract.status === 'completed_pending_client';
   const isCompleted = contract.status === 'completed';
+  const canCancel = contract.status === 'active' || contract.status === 'in_progress';
 
   return (
     <MainLayout>
