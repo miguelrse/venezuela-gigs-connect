@@ -62,12 +62,40 @@ export default function ContractDetail() {
   const [contract, setContract] = useState<ContractWithDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [hasReviewed, setHasReviewed] = useState(false);
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
 
   useEffect(() => {
     if (id && user) {
       fetchContract();
+      checkExistingReview();
     }
   }, [id, user]);
+
+  const checkExistingReview = async () => {
+    const { data } = await supabase
+      .from('reviews')
+      .select('id')
+      .eq('contract_id', id!)
+      .eq('reviewer_id', user!.id)
+      .maybeSingle();
+    setHasReviewed(!!data);
+  };
+
+  const cancelContract = async () => {
+    if (!contract) return;
+    setIsUpdating(true);
+    const { error } = await supabase.rpc('cancel_contract', { _contract_id: contract.id });
+    if (error) {
+      console.error('cancel_contract failed:', error);
+      toast.error('No se pudo cancelar el contrato');
+      setIsUpdating(false);
+      return;
+    }
+    toast.success('Contrato cancelado');
+    setIsUpdating(false);
+    fetchContract();
+  };
 
   const fetchContract = async () => {
     const { data, error } = await supabase
