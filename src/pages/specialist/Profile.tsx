@@ -109,11 +109,11 @@ export default function SpecialistProfile() {
           .select('user_id, full_name, avatar_url')
           .in('user_id', reviewerIds);
 
-        const profileMap = new Map(reviewerProfiles?.map(p => [p.user_id, p]) || []);
+        const profileMap = new Map((reviewerProfiles || []).map((p: any) => [p.user_id, p]));
         setReviews(reviewsData.map(review => ({
           ...review,
-          reviewer: profileMap.get(review.reviewer_id) || undefined
-        })));
+          reviewer: (profileMap.get(review.reviewer_id) as any) || undefined
+        })) as any);
       }
 
       // Calculate stats
