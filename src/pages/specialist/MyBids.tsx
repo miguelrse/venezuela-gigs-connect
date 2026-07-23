@@ -149,6 +149,30 @@ export default function MyBids() {
             <span>Ver contratos para gestionar este trabajo</span>
           </div>
         )}
+        {bid.status === 'submitted' && bid.job?.status === 'open' && (
+          <div className="mt-3 pt-3 border-t" onClick={(e) => e.stopPropagation()}>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" onClick={(e) => e.preventDefault()}>
+                  <XCircle className="mr-2 h-3.5 w-3.5" />
+                  Retirar oferta
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Retirar esta oferta?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    El cliente ya no verá tu propuesta. Podrás volver a ofertar mientras el trabajo siga abierto.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Volver</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => withdrawBid(bid.id)}>Sí, retirar</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        )}
       </>
     );
 
