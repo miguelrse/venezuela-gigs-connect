@@ -208,6 +208,10 @@ export default function ContractDetail() {
           Volver a contratos
         </Button>
 
+        <div className="mb-6">
+          <SafetyTips audience="specialist" />
+        </div>
+
         {/* Status Banner */}
         {isPendingClient && (
           <Card className="mb-6 border-amber-500/50 bg-amber-500/10">
