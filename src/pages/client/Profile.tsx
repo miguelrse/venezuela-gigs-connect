@@ -59,8 +59,8 @@ export default function ClientProfile() {
       if (reviewsData && reviewsData.length > 0) {
         // Fetch reviewer profiles
         const reviewerIds = [...new Set(reviewsData.map(r => r.reviewer_id))];
-        const { data: reviewerProfiles } = await (supabase as any)
-          .from('public_profiles')
+        const { data: reviewerProfiles } = await supabase
+      .from('public_profiles')
           .select('user_id, full_name, avatar_url')
           .in('user_id', reviewerIds);
 

@@ -77,8 +77,8 @@ export default function JobDetail() {
     if (data) {
       // Fetch specialist profiles separately
       const specialistIds = [...new Set(data.map(b => b.specialist_id))];
-      const { data: profiles } = await (supabase as any)
-        .from('public_profiles')
+      const { data: profiles } = await supabase
+      .from('public_profiles')
         .select('user_id, full_name, location')
         .in('user_id', specialistIds);
 

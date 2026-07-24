@@ -34,7 +34,7 @@ export default function BrowseJobs() {
 
   const fetchJobs = async () => {
     setIsLoading(true);
-    const { data } = await (supabase as any)
+    const { data } = await supabase
       .from('open_jobs_feed')
       .select('*')
       .order('created_at', { ascending: false });

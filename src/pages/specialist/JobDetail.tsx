@@ -57,7 +57,7 @@ export default function SpecialistJobDetail() {
   }, [id, user]);
 
   const fetchJob = async () => {
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('open_jobs_feed')
       .select('*')
       .eq('id', id)
