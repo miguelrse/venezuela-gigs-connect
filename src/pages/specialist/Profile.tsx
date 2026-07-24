@@ -48,11 +48,11 @@ export default function SpecialistProfile() {
       // Fetch profile (own: full row; other: public view without phone)
       const profileQuery = isOwnProfile
         ? supabase.from('profiles').select('*').eq('user_id', id).single()
-        : (supabase as any).from('public_profiles').select('*').eq('user_id', id).single();
+        : supabase.from('public_profiles').select('*').eq('user_id', id).single();
       const { data: profileData, error: profileError } = await profileQuery;
 
       if (profileError) throw profileError;
-      setProfile(profileData);
+      setProfile({ phone: null, ...(profileData as any) } as Profile);
 
       // Fetch specialist categories
       const { data: specCats } = await supabase
@@ -104,8 +104,8 @@ export default function SpecialistProfile() {
       if (reviewsData && reviewsData.length > 0) {
         // Fetch reviewer profiles
         const reviewerIds = [...new Set(reviewsData.map(r => r.reviewer_id))];
-        const { data: reviewerProfiles } = await (supabase as any)
-          .from('public_profiles')
+        const { data: reviewerProfiles } = await supabase
+      .from('public_profiles')
           .select('user_id, full_name, avatar_url')
           .in('user_id', reviewerIds);
 

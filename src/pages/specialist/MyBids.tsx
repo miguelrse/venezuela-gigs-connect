@@ -58,7 +58,7 @@ export default function MyBids() {
     if (data && data.length > 0) {
       const typedBids = data as unknown as BidRow[];
       const clientIds = [...new Set(typedBids.map((bid) => bid.job?.client_id).filter(Boolean))];
-      const { data: profiles } = await (supabase as any).from('public_profiles').select('user_id, full_name').in('user_id', clientIds);
+      const { data: profiles } = await supabase.from('public_profiles').select('user_id, full_name').in('user_id', clientIds);
       const bidsWithClients = typedBids.map((bid) => ({
         ...bid,
         client: profiles?.find(p => p.user_id === bid.job?.client_id)
