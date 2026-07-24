@@ -355,6 +355,9 @@ export default function JobDetail() {
                         {bid.message && (
                           <p className="mt-2 text-sm text-muted-foreground">{bid.message}</p>
                         )}
+                        <div className="mt-2">
+                          <ReportDialog targetType="bid" targetId={bid.id} triggerVariant="ghost" />
+                        </div>
                       </div>
                       {canAcceptBids && bid.status === 'submitted' && (
                         <Button
