@@ -313,7 +313,10 @@ export default function JobDetail() {
         {/* Bids */}
         <Card>
           <CardHeader>
-            <CardTitle>Ofertas Recibidas ({bids.length})</CardTitle>
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle>Ofertas Recibidas ({bids.length})</CardTitle>
+              <SafetyTips audience="client" compact />
+            </div>
           </CardHeader>
           <CardContent>
             {bids.length === 0 ? (
