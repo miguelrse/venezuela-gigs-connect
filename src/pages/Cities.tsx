@@ -18,6 +18,11 @@ const cities = [
 export default function Cities() {
   return (
     <MainLayout>
+      <PageMeta
+        title="Ciudades — Especialistas en Caracas, Valencia, Maracaibo y más | ChambaLink"
+        description="Contrata especialistas en Caracas, Valencia, Maracaibo, Barquisimeto, Maracay y remoto. Cobertura nacional con reseñas verificadas."
+        path="/ciudades"
+      />
       <section className="bg-gradient-hero py-16">
         <div className="container-wide">
           <div className="mx-auto max-w-3xl text-center">

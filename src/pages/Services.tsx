@@ -42,6 +42,11 @@ const serviceGroups = [
 export default function Services() {
   return (
     <MainLayout>
+      <PageMeta
+        title="Servicios en Venezuela — Reparaciones, tecnología, belleza y más | ChambaLink"
+        description="Explora las categorías de servicios disponibles en ChambaLink: hogar, tecnología, belleza, eventos, clases y negocios. Encuentra el especialista ideal."
+        path="/servicios"
+      />
       <section className="bg-gradient-hero py-16">
         <div className="container-wide">
           <div className="mx-auto max-w-3xl text-center">

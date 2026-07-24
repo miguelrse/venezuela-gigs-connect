@@ -64,6 +64,11 @@ const roadmapTools = [
 export default function Index() {
   return (
     <MainLayout>
+      <PageMeta
+        title="ChambaLink — Contrata especialistas de confianza en Venezuela"
+        description="Publica trabajos, recibe ofertas y contrata especialistas verificados en Venezuela. Reseñas reales, pagos en dólares, sin complicaciones."
+        path="/"
+      />
       <section className="relative overflow-hidden bg-gradient-hero py-16 lg:py-24">
         <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-primary/10 to-transparent" />
         <div className="container-wide relative">
