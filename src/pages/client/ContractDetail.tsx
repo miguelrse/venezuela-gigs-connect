@@ -185,6 +185,12 @@ export default function ClientContractDetail() {
           Volver al panel
         </Button>
 
+        <div className="mb-6">
+          <SafetyTips audience="client" />
+        </div>
+
+
+
         {/* Pending Confirmation Banner */}
         {isPendingConfirmation && (
           <Card className="mb-6 border-amber-500/50 bg-amber-500/10">
