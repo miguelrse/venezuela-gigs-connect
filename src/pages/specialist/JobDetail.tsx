@@ -14,6 +14,8 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { ArrowLeft, MapPin, DollarSign, Calendar, User, Loader2, Send, CheckCircle, Clock, Wifi, Building, Star, Briefcase } from 'lucide-react';
 import type { Job, Bid, BidFormData, JobType, JobUrgency } from '@/types/database';
+import { ReportDialog } from '@/components/trust/ReportDialog';
+import { SafetyTips } from '@/components/trust/SafetyTips';
 
 interface ClientInfo {
   user_id: string;
@@ -365,10 +367,18 @@ export default function SpecialistJobDetail() {
                         Miembro desde {memberSince}
                       </p>
                     )}
+
+                    <Separator />
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">¿Algo sospechoso?</span>
+                      <ReportDialog targetType="user" targetId={clientInfo.user_id} triggerVariant="ghost" />
+                    </div>
                   </>
                 )}
               </CardContent>
             </Card>
+
+            <SafetyTips audience="specialist" />
 
             {/* Other jobs by this client */}
             {otherJobs.length > 0 && (

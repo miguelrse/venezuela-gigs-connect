@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { SafetyTips } from '@/components/trust/SafetyTips';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { stripGeoMarker } from '@/lib/geo';
@@ -206,6 +207,10 @@ export default function ContractDetail() {
           <ArrowLeft className="mr-2 h-4 w-4" />
           Volver a contratos
         </Button>
+
+        <div className="mb-6">
+          <SafetyTips audience="specialist" />
+        </div>
 
         {/* Status Banner */}
         {isPendingClient && (

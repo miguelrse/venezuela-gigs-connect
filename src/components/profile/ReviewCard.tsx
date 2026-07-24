@@ -1,17 +1,21 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { RatingStars } from "./RatingStars";
-import { Review, ReviewerProfile } from "@/types/database";
+import { ReportDialog } from "@/components/trust/ReportDialog";
+import { Review } from "@/types/database";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ReviewCardProps {
   review: Review;
 }
 
 export function ReviewCard({ review }: ReviewCardProps) {
+  const { user } = useAuth();
   const reviewerName = review.reviewer?.full_name || "Usuario";
   const reviewerInitials = reviewerName.split(" ").map(n => n[0]).join("").slice(0, 2);
+  const canReport = user && user.id !== review.reviewer_id;
 
   return (
     <Card className="border-border/50">
@@ -38,9 +42,15 @@ export function ReviewCard({ review }: ReviewCardProps) {
                 {review.comment}
               </p>
             )}
+            {canReport && (
+              <div className="mt-2">
+                <ReportDialog targetType="review" targetId={review.id} triggerVariant="ghost" />
+              </div>
+            )}
           </div>
         </div>
       </CardContent>
     </Card>
   );
 }
+

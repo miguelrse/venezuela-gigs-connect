@@ -10,6 +10,8 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { toast } from 'sonner';
 import { ArrowLeft, MapPin, DollarSign, Calendar, User, Loader2, Check, FileText, Clock, CheckCircle } from 'lucide-react';
 import type { Job, Bid, ContractStatus } from '@/types/database';
+import { ReportDialog } from '@/components/trust/ReportDialog';
+import { SafetyTips } from '@/components/trust/SafetyTips';
 
 type BidWithSpecialist = Bid & {
   specialist?: {
@@ -311,7 +313,10 @@ export default function JobDetail() {
         {/* Bids */}
         <Card>
           <CardHeader>
-            <CardTitle>Ofertas Recibidas ({bids.length})</CardTitle>
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle>Ofertas Recibidas ({bids.length})</CardTitle>
+              <SafetyTips audience="client" compact />
+            </div>
           </CardHeader>
           <CardContent>
             {bids.length === 0 ? (
@@ -350,6 +355,9 @@ export default function JobDetail() {
                         {bid.message && (
                           <p className="mt-2 text-sm text-muted-foreground">{bid.message}</p>
                         )}
+                        <div className="mt-2">
+                          <ReportDialog targetType="bid" targetId={bid.id} triggerVariant="ghost" />
+                        </div>
                       </div>
                       {canAcceptBids && bid.status === 'submitted' && (
                         <Button

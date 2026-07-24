@@ -2,6 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RatingStars } from "./RatingStars";
+import { ReportDialog } from "@/components/trust/ReportDialog";
 import { Profile, AppRole, Category } from "@/types/database";
 import { MapPin, Phone, Edit, Briefcase } from "lucide-react";
 
@@ -71,11 +72,15 @@ export function ProfileHeader({
             </div>
           </div>
           
-          {isOwnProfile && (
+          {isOwnProfile ? (
             <Button variant="outline" size="sm" onClick={onEdit} className="shrink-0">
               <Edit className="h-4 w-4 mr-2" />
               Editar perfil
             </Button>
+          ) : (
+            <div className="shrink-0">
+              <ReportDialog targetType="user" targetId={profile.user_id} triggerVariant="outline" />
+            </div>
           )}
         </div>
         
