@@ -43,7 +43,7 @@ export default function ClientProfile() {
       // Fetch profile (own: full row; other: public view without phone)
       const profileQuery = isOwnProfile
         ? supabase.from('profiles').select('*').eq('user_id', id).single()
-        : (supabase as any).from('public_profiles').select('*').eq('user_id', id).single();
+        : supabase.from('public_profiles').select('*').eq('user_id', id).single();
       const { data: profileData, error: profileError } = await profileQuery;
 
       if (profileError) throw profileError;
