@@ -47,7 +47,7 @@ export default function ClientProfile() {
       const { data: profileData, error: profileError } = await profileQuery;
 
       if (profileError) throw profileError;
-      setProfile(profileData);
+      setProfile({ phone: null, ...(profileData as any) } as Profile);
 
       // Fetch reviews for this client
       const { data: reviewsData } = await supabase
