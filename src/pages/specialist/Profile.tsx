@@ -52,7 +52,7 @@ export default function SpecialistProfile() {
       const { data: profileData, error: profileError } = await profileQuery;
 
       if (profileError) throw profileError;
-      setProfile(profileData);
+      setProfile({ phone: null, ...(profileData as any) } as Profile);
 
       // Fetch specialist categories
       const { data: specCats } = await supabase
