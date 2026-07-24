@@ -367,10 +367,18 @@ export default function SpecialistJobDetail() {
                         Miembro desde {memberSince}
                       </p>
                     )}
+
+                    <Separator />
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">¿Algo sospechoso?</span>
+                      <ReportDialog targetType="user" targetId={clientInfo.user_id} triggerVariant="ghost" />
+                    </div>
                   </>
                 )}
               </CardContent>
             </Card>
+
+            <SafetyTips audience="specialist" />
 
             {/* Other jobs by this client */}
             {otherJobs.length > 0 && (
