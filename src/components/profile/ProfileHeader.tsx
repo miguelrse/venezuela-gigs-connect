@@ -2,6 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RatingStars } from "./RatingStars";
+import { ReportDialog } from "@/components/trust/ReportDialog";
 import { Profile, AppRole, Category } from "@/types/database";
 import { MapPin, Phone, Edit, Briefcase } from "lucide-react";
 
