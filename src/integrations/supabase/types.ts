@@ -369,6 +369,42 @@ export type Database = {
         }
         Relationships: []
       }
+      reports: {
+        Row: {
+          created_at: string
+          details: string | null
+          id: string
+          reason: string
+          reporter_id: string
+          status: Database["public"]["Enums"]["report_status"]
+          target_id: string
+          target_type: Database["public"]["Enums"]["report_target_type"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          reason: string
+          reporter_id: string
+          status?: Database["public"]["Enums"]["report_status"]
+          target_id: string
+          target_type: Database["public"]["Enums"]["report_target_type"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          reason?: string
+          reporter_id?: string
+          status?: Database["public"]["Enums"]["report_status"]
+          target_id?: string
+          target_type?: Database["public"]["Enums"]["report_target_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       reviews: {
         Row: {
           comment: string | null
@@ -579,6 +615,15 @@ export type Database = {
         Args: { _contract_id: string }
         Returns: undefined
       }
+      user_trust_stats: {
+        Args: { _user_id: string }
+        Returns: {
+          avg_rating: number
+          completed_jobs: number
+          member_since: string
+          review_count: number
+        }[]
+      }
     }
     Enums: {
       app_role: "client" | "specialist" | "admin"
@@ -605,6 +650,8 @@ export type Database = {
         | "paid_held"
         | "released"
         | "refunded"
+      report_status: "open" | "reviewing" | "resolved" | "dismissed"
+      report_target_type: "user" | "job" | "review" | "bid"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -759,6 +806,8 @@ export const Constants = {
         "released",
         "refunded",
       ],
+      report_status: ["open", "reviewing", "resolved", "dismissed"],
+      report_target_type: ["user", "job", "review", "bid"],
     },
   },
 } as const
