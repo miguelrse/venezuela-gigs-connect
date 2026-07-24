@@ -72,11 +72,15 @@ export function ProfileHeader({
             </div>
           </div>
           
-          {isOwnProfile && (
+          {isOwnProfile ? (
             <Button variant="outline" size="sm" onClick={onEdit} className="shrink-0">
               <Edit className="h-4 w-4 mr-2" />
               Editar perfil
             </Button>
+          ) : (
+            <div className="shrink-0">
+              <ReportDialog targetType="user" targetId={profile.user_id} triggerVariant="outline" />
+            </div>
           )}
         </div>
         
